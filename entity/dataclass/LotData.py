@@ -10,6 +10,7 @@ class LotData:
             char: CharData,
             user: UserData,
             price: float,
+            contact_info: str,
             date_opened: datetime.date,
             date_closed: datetime.date = None,
             lot_id: int = None
@@ -17,6 +18,7 @@ class LotData:
         self.char = char
         self.user = user
         self.price = price
+        self.contact_info = contact_info
         self.date_opened = date_opened
         self.date_closed = date_closed
         self.lot_id = lot_id

@@ -43,7 +43,7 @@ class DBWorker:
         ]
 
     @staticmethod
-    def open_lot(user: UserData, char: CharData, price: float) -> bool:
+    def open_lot(user: UserData, char: CharData, price: float, contact: str) -> bool:
         if DBWorker.__find_active_lot(user, char) is not None:
             return True
         return execute_query(
@@ -53,14 +53,21 @@ class DBWorker:
             f'{DBWorker.__checked_user_id(user)}, '
             f'{time.time()}, '
             f'null, '
-            f'{price})'
+            f'{price},'
+            f'\'{contact}\')'
         )
 
     @staticmethod
-    def close_lot(user: UserData, char: CharData) -> bool:
-        lot_id = DBWorker.__find_active_lot(user, char)
-        assert lot_id is not None
-        return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot_id}')
+    def close_lot(lot: LotData) -> bool:
+        assert lot.lot_id is not None and lot.date_closed is not None
+        return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot.lot_id}')
+
+    @staticmethod
+    def get_user_lots(user: UserData):
+        return [DBWorker.__lot_data_from_tuple(e) for e in
+                execute_query_with_cursor(
+                    f'select * from lot where user_id = {user.user_id} and date_close is not null'
+                )]
 
     @staticmethod
     def __find_active_lot(user: UserData, char: CharData) -> Optional[int]:
@@ -146,5 +153,6 @@ class DBWorker:
             price=data[5],
             date_opened=datetime.datetime.fromtimestamp(data[3]),
             date_closed=datetime.datetime.fromtimestamp(data[4]) if data[4] is not None else None,
-            lot_id=data[0]
+            lot_id=data[0],
+            contact_info=data[6]
         )

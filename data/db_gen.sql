@@ -24,5 +24,6 @@ create table lot
                         references user,
     date_opened     timestamp not null,
     date_close      timestamp,
-    price           float not null
+    price           float not null,
+    contact         text not null
 );
