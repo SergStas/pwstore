@@ -8,6 +8,7 @@ from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
 from entity.enums.Race import Race
 from entity.enums.Server import Server
+from logger.Logger import Logger
 
 
 class DBWorker:
@@ -15,7 +16,10 @@ class DBWorker:
     def insert_user(user: UserData) -> bool:
         if DBWorker.__find_user(user) is not None:
             return True
-        return execute_query(f'insert into user values ({user.user_id})')
+        result = execute_query(f'insert into user values ({user.user_id})')
+        if result:
+            Logger.debug(f'New user has been registered, id = {user.user_id}')
+        return result
 
     @staticmethod
     def insert_char(char: CharData) -> bool:
@@ -36,16 +40,16 @@ class DBWorker:
 
     @staticmethod
     def get_all_active_lots() -> [LotData]:
-        return [
+        return [converted for converted in [
             DBWorker.__lot_data_from_tuple(e) for e in execute_query_with_cursor(
                 f'select * from lot where date_close is null'
-            )
-        ]
+            )] if converted is not None]
 
     @staticmethod
     def open_lot(user: UserData, char: CharData, price: float, contact: str) -> bool:
-        if DBWorker.__find_active_lot(user, char) is not None:
-            return True
+        if DBWorker.__is_lot_already_opened(user, char):
+            Logger.error(f'Lot is already opened')
+            return False
         return execute_query(
             f'insert into lot values ('
             f'null, '
@@ -59,15 +63,29 @@ class DBWorker:
 
     @staticmethod
     def close_lot(lot: LotData) -> bool:
-        assert lot.lot_id is not None and lot.date_closed is not None
-        return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot.lot_id}')
+        try:
+            assert lot.lot_id is not None and lot.date_closed is not None
+            return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot.lot_id}')
+        except Exception as e:
+            Logger.error(f'Failed to close lot with id = {lot.lot_id}:\n\t\t\t{e}')
+            return False
 
     @staticmethod
     def get_user_lots(user: UserData):
-        return [DBWorker.__lot_data_from_tuple(e) for e in
+        return [converted for converted in [DBWorker.__lot_data_from_tuple(e) for e in
                 execute_query_with_cursor(
                     f'select * from lot where user_id = {user.user_id} and date_close is not null'
-                )]
+                )] if converted is not None]
+
+    @staticmethod
+    def __is_lot_already_opened(user: UserData, char: CharData) -> bool:
+        if char.char_id is None:
+            return False
+        return len(execute_query_with_cursor(
+            f'select * from lot where '
+            f'user_id = {user.user_id} and '
+            f'char_id = {char.char_id}'
+        )) > 0
 
     @staticmethod
     def __find_active_lot(user: UserData, char: CharData) -> Optional[int]:
@@ -111,11 +129,14 @@ class DBWorker:
             return None
 
     @staticmethod
-    def __checked_char_id(char: CharData) -> int:
-        if not DBWorker.__find_char(char):
-            print(DBWorker.__find_char(char))
-            assert DBWorker.insert_char(char)
-        return DBWorker.__find_char(char)
+    def __checked_char_id(char: CharData) -> Optional[int]:
+        try:
+            if not DBWorker.__find_char(char):
+                assert DBWorker.insert_char(char)
+            return DBWorker.__find_char(char)
+        except Exception as e:
+            Logger.error(f'Failed to get character id:\n\t\t\t{e}')
+            return None
 
     @staticmethod
     def __checked_user_id(user: UserData) -> int:
@@ -125,34 +146,58 @@ class DBWorker:
 
     @staticmethod
     def __user_data_from_tuple(data) -> UserData:
-        return UserData(
-            user_id=data[0]
+        return DBWorker.__handle_error(
+            lambda:
+                UserData(
+                    user_id=data[0]
+                ),
+            'Failed to load user info'
         )
 
     @staticmethod
-    def __char_data_from_tuple(data) -> CharData:
-        return CharData(
-            server=Server[data[1]],
-            race=Race[data[2]],
-            lvl=data[3],
-            char_class=data[4],
-            description=data[5],
-            heavens=data[6],
-            doll=data[7],
-            char_id=data[0]
+    def __char_data_from_tuple(data) -> Optional[CharData]:
+        return DBWorker.__handle_error(
+            lambda:
+                CharData(
+                    server=Server[data[1]],
+                    race=Race[data[2]],
+                    lvl=data[3],
+                    char_class=data[4],
+                    description=data[5],
+                    heavens=data[6],
+                    doll=data[7],
+                    char_id=data[0]
+                ),
+            'Failed to load character info'
         )
 
     @staticmethod
-    def __lot_data_from_tuple(data) -> LotData:
-        char = execute_query_with_cursor(f'select * from character where char_id = {data[1]}')
-        user = execute_query_with_cursor(f'select * from user where user_id = {data[2]}')
-        assert len(char) > 0 and len(user) > 0
-        return LotData(
-            char=DBWorker.__char_data_from_tuple(char[0]),
-            user=DBWorker.__user_data_from_tuple(user[0]),
-            price=data[5],
-            date_opened=datetime.datetime.fromtimestamp(data[3]),
-            date_closed=datetime.datetime.fromtimestamp(data[4]) if data[4] is not None else None,
-            lot_id=data[0],
-            contact_info=data[6]
-        )
+    def __lot_data_from_tuple(data) -> Optional[LotData]:
+        try:
+            char = DBWorker.__char_data_from_tuple(
+                execute_query_with_cursor(f'select * from character where char_id = {data[1]}')[0]
+            )
+            user = DBWorker.__user_data_from_tuple(
+                execute_query_with_cursor(f'select * from user where user_id = {data[2]}')[0]
+            )
+            assert char is not None and user is not None
+            return LotData(
+                char=char,
+                user=user,
+                price=data[5],
+                date_opened=datetime.datetime.fromtimestamp(data[3]),
+                date_closed=datetime.datetime.fromtimestamp(data[4]) if data[4] is not None else None,
+                lot_id=data[0],
+                contact_info=data[6]
+            )
+        except Exception as e:
+            Logger.error(f'Failed to load data lot info:\n\t\t\t{e}')
+            return None
+
+    @staticmethod
+    def __handle_error(f, error_message: str = 'Failed to perform operation'):
+        try:
+            return f()
+        except Exception as e:
+            Logger.error(f'{error_message}:\n\t\t\t{e}')
+            return None

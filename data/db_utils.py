@@ -1,6 +1,8 @@
 import sqlite3
 from sqlite3 import Cursor
 
+from logger.Logger import Logger
+
 __conn = sqlite3.connect('pwstore.db', check_same_thread=False)
 
 
@@ -21,6 +23,7 @@ def execute_query(query: str) -> bool:
         __conn.commit()
         return True
     except Exception as e:
+        Logger.error(f'An error has occurred during executing query:\n\t\tquery: {query}\n\t\terror: {e}')
         return False
 
 
@@ -29,7 +32,8 @@ def execute_query_with_cursor(query: str) -> list:
         cursor = get_cursor()
         cursor.execute(query)
         return cursor.fetchall()
-    except Exception:
+    except Exception as e:
+        Logger.error(f'An error has occurred during executing query:\n\t\tquery: {query}\n\t\terror: {e}')
         return []
 
 
