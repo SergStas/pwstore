@@ -19,7 +19,8 @@ class DBWorker:
 
     @staticmethod
     def insert_char(char: CharData) -> bool:
-        if DBWorker.__find_char(char) is not None:
+        if char.char_id is not None and char.char_id in \
+                [e[0] for e in execute_query_with_cursor('select char_id from character')]:
             return True
         return execute_query(
             f'insert into character values ('

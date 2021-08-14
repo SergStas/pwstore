@@ -21,3 +21,4 @@ class CharData:
         self.description = description
         self.heavens = heavens
         self.doll = doll
+        self.char_id = char_id
