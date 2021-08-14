@@ -64,7 +64,7 @@ class DBWorker:
     @staticmethod
     def close_lot(lot: LotData) -> bool:
         try:
-            assert lot.lot_id is not None and lot.date_closed is not None
+            assert lot.lot_id is not None and lot.date_closed is None
             return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot.lot_id}')
         except Exception as e:
             Logger.error(f'Failed to close lot with id = {lot.lot_id}:\n\t\t\t{e}')
