@@ -13,15 +13,15 @@ from logger.Logger import Logger
 
 class DBWorker:
     @staticmethod
-    def register_session(user: UserData) -> bool:
-        if DBWorker.is_session_registered(user):
-            Logger.error(f'Failed to register session for user #{user.user_id} - session is already registered')
+    def register_session(user_id: int) -> bool:
+        if DBWorker.is_session_registered(user_id):
+            Logger.error(f'Failed to register session for user #{user_id} - session is already registered')
             return False
-        return execute_query(f'insert into session values (null, {user.user_id}, {time.time()})')
+        return execute_query(f'insert into session values (null, {user_id}, {time.time()})')
 
     @staticmethod
-    def is_session_registered(user: UserData) -> bool:
-        return len(execute_query_with_cursor(f'select * from session where user_id = {user.user_id}')) > 0
+    def is_session_registered(user_id: int) -> bool:
+        return len(execute_query_with_cursor(f'select * from session where user_id = {user_id}')) > 0
 
     @staticmethod
     def wipe_sessions() -> bool:

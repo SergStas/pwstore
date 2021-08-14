@@ -1,7 +1,6 @@
 import sqlite3
 from sqlite3 import Cursor
 
-from data.DBWorker import DBWorker
 from logger.Logger import Logger
 
 __conn = sqlite3.connect('pwstore.db', check_same_thread=False)
@@ -13,7 +12,6 @@ def init_db() -> None:
         cursor.executescript(file.read())
         __conn.commit()
     Logger.debug(f'DB has been inited')
-    DBWorker.wipe_sessions()
 
 
 def get_cursor() -> Cursor:
