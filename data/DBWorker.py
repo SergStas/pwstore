@@ -13,6 +13,24 @@ from logger.Logger import Logger
 
 class DBWorker:
     @staticmethod
+    def register_session(user: UserData) -> bool:
+        if DBWorker.is_session_registered(user):
+            Logger.error(f'Failed to register session for user #{user.user_id} - session is already registered')
+            return False
+        return execute_query(f'insert into session values (null, {user.user_id}, {time.time()})')
+
+    @staticmethod
+    def is_session_registered(user: UserData) -> bool:
+        return len(execute_query_with_cursor(f'select * from session where user_id = {user.user_id}')) > 0
+
+    @staticmethod
+    def wipe_sessions() -> bool:
+        result = execute_query('delete from session where true')
+        if result:
+            Logger.debug(f'Sessions has been wiped')
+        return result
+
+    @staticmethod
     def insert_user(user: UserData) -> bool:
         if DBWorker.__find_user(user) is not None:
             return True

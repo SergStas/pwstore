@@ -27,3 +27,10 @@ create table lot
     price           float not null,
     contact         text not null
 );
+
+create table session
+(
+    session_id      integer primary key,
+    user_id         integer not null,
+    session_start   timestamp not null
+);
