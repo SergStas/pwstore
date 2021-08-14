@@ -11,6 +11,7 @@ def init_db() -> None:
         cursor = get_cursor()
         cursor.executescript(file.read())
         __conn.commit()
+    Logger.debug(f'DB has been inited')
 
 
 def get_cursor() -> Cursor:
@@ -41,6 +42,7 @@ def cleanup_db() -> bool:
     result = execute_query('delete from user where true') and \
            execute_query('delete from character where true') and \
            execute_query('delete from lot where true')
+    Logger.debug(f'DB has been cleaned')
     return result
 
 
@@ -48,4 +50,5 @@ def drop_db() -> bool:
     result = execute_query('drop table character') and \
            execute_query('drop table user') and \
            execute_query('drop table lot')
+    Logger.debug(f'DB has been dropped')
     return result
