@@ -13,11 +13,37 @@ from logger.Logger import Logger
 
 class DBWorker:
     @staticmethod
+    def get_filtered_lots(user_id: int) -> [LotData]:
+        try:
+            last_start = execute_query_with_cursor(f'select max(session_start) from session '
+                                                   f'where user_id = {user_id}')[0][0]
+            data = execute_query_with_cursor(f'select * from session '
+                                              f'where user_id = {user_id} and session_start = {last_start}')[0]
+            server, race = data[2], data[3]
+            return [
+                e for e in DBWorker.get_all_active_lots() if e.char.server == server and e.char.race == race
+            ]
+        except Exception as e:
+            Logger.error(f'Failed to get filtered lots:\n\t\t\t{e}')
+            return None
+
+    @staticmethod
+    def update_search_session_params(user_id: int, server: Server = None, race: Race = None) -> bool:
+        if server is None and race is None:
+            return True
+        DBWorker.register_session(user_id)
+        server_token = f'search_server = \'{server.name}\'' if server is not None else ''
+        race_token = f'search_race = \'{race.name}\'' if race is not None else ''
+        and_token = ' and ' if race is not None and server is not None else ''
+        return execute_query(
+            f'update session set {server_token}{and_token}{race_token} where user_id = {user_id}'
+        )
+
+    @staticmethod
     def register_session(user_id: int) -> bool:
         if DBWorker.is_session_registered(user_id):
-            Logger.error(f'Failed to register session for user #{user_id} - session is already registered')
-            return False
-        return execute_query(f'insert into session values (null, {user_id}, {time.time()})')
+            return True
+        return execute_query(f'insert into session values (null, {user_id}, null, null, {time.time()})')
 
     @staticmethod
     def is_session_registered(user_id: int) -> bool:
@@ -25,10 +51,7 @@ class DBWorker:
 
     @staticmethod
     def wipe_sessions() -> bool:
-        result = execute_query('delete from session where true')
-        if result:
-            Logger.debug(f'Sessions has been wiped')
-        return result
+        return execute_query('delete from session where true')
 
     @staticmethod
     def insert_user(user: UserData) -> bool:

@@ -32,5 +32,7 @@ create table session
 (
     session_id      integer primary key,
     user_id         integer not null,
+    search_server   text,
+    search_race     text,
     session_start   timestamp not null
 );

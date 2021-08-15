@@ -2,8 +2,8 @@ import os
 
 import telebot
 
-from data.DBWorker import DBWorker
 from logger.Logger import Logger
+from controllers.DBController import DBController
 
 
 def init_bot() -> telebot.TeleBot:
@@ -11,15 +11,12 @@ def init_bot() -> telebot.TeleBot:
     Logger.debug('Starting bot...')
     res_bot = telebot.TeleBot(token)
     Logger.debug('Bot has been inited')
-    DBWorker.wipe_sessions()
+    DBController.wipe_sessions()
     return res_bot
 
 
 def check_user_session(user_id: int) -> bool:
-    if DBWorker.is_session_registered(user_id):
-        return True
-    DBWorker.register_session(user_id)
-    Logger.debug(f'Session for user {user_id} has been registered')
+    DBController.register_session(user_id)
     return False
 
 

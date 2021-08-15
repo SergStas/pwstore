@@ -48,7 +48,8 @@ def cleanup_db() -> bool:
 
 def drop_db() -> bool:
     result = execute_query('drop table character') and \
-           execute_query('drop table user') and \
-           execute_query('drop table lot')
+             execute_query('drop table user') and \
+             execute_query('drop table lot') and \
+             execute_query('drop table session')
     Logger.debug(f'DB has been dropped')
     return result
