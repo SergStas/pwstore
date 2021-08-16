@@ -23,7 +23,7 @@ class DBWorker:  # TODO: assertion error handling
             value_token = str(value) if param not in [NewLotSessionParam.race, NewLotSessionParam.server] else \
                 value.name
             quoted_value_token = f'\'{value_token}\'' if is_text_value else str(value_token)
-            token = f'{param} = {quoted_value_token}'
+            token = f'{param.name} = {quoted_value_token}'
             assert execute_query(f'update new_lot_session set {token} where session_id = {session_id}')
             return True
         except Exception as e:

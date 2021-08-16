@@ -1,9 +1,12 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from bot.SpellHandler import SpellHandler
 from bot.bot_utils import init_bot, check_user_session
+from bot.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb
 from entity.dataclass.UserData import UserData
+from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
 from entity.enums.SearchSessionParam import SearchSessionParam
+from entity.enums.SellMenuOption import SellMenuOption
 from entity.enums.Server import Server
 from entity.enums.Event import Event
 from logger.LogLevel import LogLevel
@@ -29,7 +32,11 @@ def show_help(message: Message):
 @__bot.message_handler(commands=['sell'])
 def handle_sell_menu(message: Message):
     __check_mes(message)
-    __bot.send_message(message.from_user.id, 'select server')  # TODO
+    __bot.send_message(
+        chat_id=message.from_user.id,
+        text=SpellHandler.get_message(Event.sell_menu),
+        reply_markup=get_sell_menu_kb('sell_menu')
+    )
 
 
 @__bot.message_handler(commands=['buy'])
@@ -37,8 +44,8 @@ def handle_buy_menu(message: Message):
     __check_mes(message)
     __bot.send_message(
         chat_id=message.from_user.id,
-        text=SpellHandler.get_message(Event.select_server),
-        reply_markup=__get_server_selector_kb()
+        text=SpellHandler.get_message(Event.search_select_server),
+        reply_markup=get_server_selector_kb('search_server')
     )
 
 
@@ -50,15 +57,53 @@ def handle_other(message: Message):
 
 @__bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call: CallbackQuery):
-    key, value = __dec_cb_data(call.data)
+    key, value = dec_cb_data(call.data)
     key_dict = {
-        'server': __handle_server_callback,
-        'race': __handle_race_callback
+        'search_server': __search_server_cb,
+        'search_race': __search_race_cb,
+        'sell_menu': __sell_menu_cb,
+        'new_lot_server': __new_lot_server_cb,
+        'new_lot_race': __new_lot_race_cb
     }
     key_dict[key](call, value)
 
 
-def __handle_race_callback(call: CallbackQuery, value: str):
+def __sell_menu_cb(call: CallbackQuery, value: str):
+    __bot.delete_message(call.from_user.id, call.message.id)
+    option = SellMenuOption[value]
+    if option == SellMenuOption.new_lot:
+        __bot.send_message(
+            chat_id=call.from_user.id,
+            text=SpellHandler.get_message(Event.sell_input_server),
+            reply_markup=get_server_selector_kb('new_lot_server')
+        )
+    else:
+        pass  # TODO
+
+
+def __new_lot_server_cb(call: CallbackQuery, value: str):
+    __apply_param_default_cb(
+        call=call,
+        value=value,
+        commit_func=lambda user_id, val:
+            DBController.update_sell_session_params(user_id, NewLotSessionParam.server, Server[val]),
+        spell_event=Event.sell_input_race,
+        reply_markup=get_race_select_kb('new_lot_race')
+    )
+    # __bot.delete_message(call.from_user.id, call.message.id)
+    # DBController.update_sell_session_params(call.from_user.id, NewLotSessionParam.server, Server[value])
+    # __bot.send_message(
+    #     chat_id=call.from_user.id,
+    #     text=SpellHandler.get_message(Event.sell_input_race),
+    #     reply_markup=get_race_select_kb('new_lot_race')
+    # )
+
+
+def __new_lot_race_cb(call: CallbackQuery, value: str):
+    pass  # TODO
+
+
+def __search_race_cb(call: CallbackQuery, value: str):
     __bot.delete_message(call.from_user.id, call.message.id)
     DBController.update_search_session_params(call.from_user.id, SearchSessionParam.race, Race[value])
     lots, event = DBController.get_filtered_lots(call.from_user.id)
@@ -70,37 +115,25 @@ def __handle_race_callback(call: CallbackQuery, value: str):
         text=SpellHandler.get_message(Event.filtered_lots_found, (len(lots),)),
         reply_markup=None
     )
-
-
-def __handle_server_callback(call: CallbackQuery, value: str):
-    __bot.delete_message(call.from_user.id, call.message.id)
-    DBController.update_search_session_params(call.from_user.id, SearchSessionParam.server, Server[value])
-    __bot.send_message(
-        chat_id=call.from_user.id,
-        text=SpellHandler.get_message(Event.select_race),
-        reply_markup=__get_race_select_kb()
-    )
     # TODO: show lots
 
 
-def __get_race_select_kb() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup()
-    kb.add(InlineKeyboardButton(text='Люди', callback_data=__enc_cb_data('race', Race.human.name)))
-    kb.add(InlineKeyboardButton(text='Зооморфы', callback_data=__enc_cb_data('race', Race.untamed.name)))
-    kb.add(InlineKeyboardButton(text='Сиды', callback_data=__enc_cb_data('race', Race.winged_elf.name)))
-    kb.add(InlineKeyboardButton(text='Древние', callback_data=__enc_cb_data('race', Race.earthguard.name)))
-    kb.add(InlineKeyboardButton(text='Тени', callback_data=__enc_cb_data('race', Race.nightshade.name)))
-    kb.add(InlineKeyboardButton(text='Амфибии', callback_data=__enc_cb_data('race', Race.tideborn.name)))
-    return kb
-
-
-def __get_server_selector_kb() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardMarkup()
-    kb.add(InlineKeyboardButton(text='Арктур', callback_data=__enc_cb_data('server', Server.arcturus.name)))
-    kb.add(InlineKeyboardButton(text='Скорпион', callback_data=__enc_cb_data('server', Server.scorpion.name)))
-    kb.add(InlineKeyboardButton(text='Саргас', callback_data=__enc_cb_data('server', Server.sargaz.name)))
-    kb.add(InlineKeyboardButton(text='Гиперион', callback_data=__enc_cb_data('server', Server.hyperion.name)))
-    return kb
+def __search_server_cb(call: CallbackQuery, value: str):
+    __apply_param_default_cb(
+        call=call,
+        value=value,
+        commit_func=lambda user_id, val:
+            DBController.update_search_session_params(user_id, SearchSessionParam.server, Server[val]),
+        spell_event=Event.search_select_race,
+        reply_markup=get_race_select_kb('search_race')
+    )
+    # __bot.delete_message(call.from_user.id, call.message.id)
+    # DBController.update_search_session_params(call.from_user.id, SearchSessionParam.server, Server[value])
+    # __bot.send_message(
+    #     chat_id=call.from_user.id,
+    #     text=SpellHandler.get_message(Event.search_select_race),
+    #     reply_markup=get_race_select_kb('search_race')
+    # )
 
 
 def __send(user_id: int, event: Event, args=None) -> None:
@@ -114,14 +147,25 @@ def __check_mes(message: Message, show_greeting=False):
     Logger.debug(f'User {message.from_user.id} has sent message: {message.text}')
 
 
-def __enc_cb_data(key: str, value: str) -> str:
-    return f'{key}__{value}'
-
-
-def __dec_cb_data(token: str) -> (str, str):
-    return token.split('__')[0], token.split('__')[1]
-
-
 def start_bot():
     Logger.debug('Bot polling has started')
     __bot.polling(none_stop=True)
+
+
+def __apply_param_default_cb(
+        call: CallbackQuery,
+        value,
+        commit_func,
+        spell_event: Event,
+        reply_markup,
+        spell_args=None
+):
+    __bot.delete_message(call.from_user.id, call.message.id)
+    commit_func(call.from_user.id, value)
+    __bot.send_message(
+        chat_id=call.from_user.id,
+        text=SpellHandler.get_message(spell_event) if spell_args is None else SpellHandler.get_message(
+            spell_event, *spell_args
+        ),
+        reply_markup=reply_markup
+    )

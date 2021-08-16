@@ -3,6 +3,7 @@ from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
 from entity.dataclass.CharData import CharData
 from entity.enums.Event import Event
+from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
 from entity.enums.SearchSessionParam import SearchSessionParam
 from entity.enums.Server import Server
@@ -18,6 +19,11 @@ class DBController:
         if not len(lots):
             return [], Event.no_lots_found
         return lots, Event.filtered_lots_found
+
+    @staticmethod
+    def update_sell_session_params(user_id: int, param: NewLotSessionParam, value) -> bool:
+        assert value is not None
+        return DBWorker.update_new_lot_session_params(user_id, param, value)
 
     @staticmethod
     def update_search_session_params(user_id: int, param: SearchSessionParam, value) -> bool:

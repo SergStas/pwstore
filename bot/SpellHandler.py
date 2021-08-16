@@ -1,7 +1,6 @@
 from typing import Optional
 
 from entity.enums.Event import Event
-from logger.Logger import Logger
 
 
 class SpellHandler:
@@ -16,15 +15,21 @@ class SpellHandler:
             '/help - помощь\n'
             '/buy - перейти к поиску выставленных на продажу аккаунтов\n'
             '/sell - перейти в меню управления выставленными на продажу аккаунтов',
-        Event.select_server:
+        Event.search_select_server:
             'Выберите нужный вам сервер',
-        Event.select_race:
+        Event.search_select_race:
             'Выберите нужную вам расу',
         Event.no_lots_found:
             'Персонажей по вашему запросу не найдено, попробуйте другие настройки\n'
             'Введите /buy чтобы выбрать параметры еще раз',
         Event.db_error:
-            'Произошла ошибка, информация об активных лотах не найдена'
+            'Произошла ошибка, информация об активных лотах не найдена',
+        Event.sell_menu:
+            'Что вы хотите сделать?',
+        Event.sell_input_server:
+            'Укажите сервер вашего персонажа:',
+        Event.sell_input_race:
+            'Укажите расу:'
     }
     __with_args = {
         Event.unknown_command:
