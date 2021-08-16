@@ -4,7 +4,7 @@ create table character
     server          text not null,
     race            text not null,
     lvl             integer not null,
-    class           text not null,
+    char_class      text not null,
     description     text not null,
     heavens         text not null,
     doll            text not null
@@ -51,7 +51,7 @@ create table new_lot_session
     server          text,
     race            text,
     lvl             integer,
-    class           text,
+    char_class      text,
     description     text,
     heavens         text,
     doll            text,

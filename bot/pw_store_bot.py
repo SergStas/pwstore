@@ -3,6 +3,7 @@ from bot.SpellHandler import SpellHandler
 from bot.bot_utils import init_bot, check_user_session
 from entity.dataclass.UserData import UserData
 from entity.enums.Race import Race
+from entity.enums.SearchSessionParam import SearchSessionParam
 from entity.enums.Server import Server
 from entity.enums.Event import Event
 from logger.LogLevel import LogLevel
@@ -59,7 +60,7 @@ def callback_handler(call: CallbackQuery):
 
 def __handle_race_callback(call: CallbackQuery, value: str):
     __bot.delete_message(call.from_user.id, call.message.id)
-    DBController.update_search_session_params(call.from_user.id, race=Race[value])
+    DBController.update_search_session_params(call.from_user.id, SearchSessionParam.race, Race[value])
     lots, event = DBController.get_filtered_lots(call.from_user.id)
     if event == Event.no_lots_found or event == Event.db_error:
         __send(call.from_user.id, event)
@@ -73,7 +74,7 @@ def __handle_race_callback(call: CallbackQuery, value: str):
 
 def __handle_server_callback(call: CallbackQuery, value: str):
     __bot.delete_message(call.from_user.id, call.message.id)
-    DBController.update_search_session_params(call.from_user.id, server=Server[value])
+    DBController.update_search_session_params(call.from_user.id, SearchSessionParam.server, Server[value])
     __bot.send_message(
         chat_id=call.from_user.id,
         text=SpellHandler.get_message(Event.select_race),

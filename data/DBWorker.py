@@ -6,12 +6,30 @@ from data.db_utils import execute_query, execute_query_with_cursor
 from entity.dataclass.CharData import CharData
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
+from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
+from entity.enums.SearchSessionParam import SearchSessionParam
 from entity.enums.Server import Server
 from logger.Logger import Logger
 
 
-class DBWorker:
+class DBWorker:  # TODO: assertion error handling
+    @staticmethod
+    def update_new_lot_session_params(user_id: int, param: NewLotSessionParam, value) -> bool:
+        try:
+            session_id = DBWorker.__get_session_for_user(user_id)
+            assert session_id is not None
+            is_text_value = param not in [NewLotSessionParam.price, NewLotSessionParam.lvl]
+            value_token = str(value) if param not in [NewLotSessionParam.race, NewLotSessionParam.server] else \
+                value.name
+            quoted_value_token = f'\'{value_token}\'' if is_text_value else str(value_token)
+            token = f'{param} = {quoted_value_token}'
+            assert execute_query(f'update new_lot_session set {token} where session_id = {session_id}')
+            return True
+        except Exception as e:
+            Logger.error(f'Failed to update params of new lot session for user #{user_id}:\n\t\t\t{e}')
+            return False
+
     @staticmethod
     def get_filtered_lots(user_id: int) -> [LotData]:
         try:
@@ -28,20 +46,17 @@ class DBWorker:
             return None
 
     @staticmethod
-    def update_search_session_params(user_id: int, server: Server = None, race: Race = None) -> bool:
-        if server is None and race is None:
-            return True
-        assert DBWorker.is_user_registered(user_id)
-        server_token = f'server = \'{server.name}\'' if server is not None else ''
-        race_token = f'race = \'{race.name}\'' if race is not None else ''
-        and_token = ' and ' if race is not None and server is not None else ''
+    def update_search_session_params(user_id: int, param: SearchSessionParam, value) -> bool:
         try:
             session_id = DBWorker.__get_session_for_user(user_id)
             assert session_id is not None
             assert execute_query(
-                f'update search_session set {server_token}{and_token}{race_token} where session_id = {session_id}'
+                f'update search_session set {param.name} = \'{value.name}\' where session_id = {session_id}'
             )
             return True
+        except AssertionError:
+            Logger.error(f'Assertion error has occurred during updating search params for user'
+                         f'#{user_id}')
         except Exception as e:
             Logger.error(f'Failed to update search params for user #{user_id}:\n\t\t\t{e}')
             return False
@@ -59,6 +74,8 @@ class DBWorker:
             assert DBWorker.__new_nls(session_id)
             return True
         except Exception as e:
+            Logger.error(f'Assertion error has occurred during creating session for user'
+                         f'#{user.user_id}')
             Logger.error(f'Failed to create session for user #{user.user_id}:\n\t\t\t{e}')
             return False
 
@@ -208,7 +225,7 @@ class DBWorker:
                 f'server = \'{char.server.name}\' and '
                 f'race = \'{char.race.name}\' and '
                 f'lvl = {char.lvl} and '
-                f'class = \'{char.char_class}\' and '
+                f'char_class = \'{char.char_class}\' and '
                 f'description = \'{char.description}\' and '
                 f'heavens = \'{char.heavens}\' and '
                 f'doll = \'{char.doll}\''

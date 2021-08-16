@@ -4,6 +4,7 @@ from entity.dataclass.UserData import UserData
 from entity.dataclass.CharData import CharData
 from entity.enums.Event import Event
 from entity.enums.Race import Race
+from entity.enums.SearchSessionParam import SearchSessionParam
 from entity.enums.Server import Server
 from logger.Logger import Logger
 
@@ -19,9 +20,9 @@ class DBController:
         return lots, Event.filtered_lots_found
 
     @staticmethod
-    def update_search_session_params(user_id: int, server: Server = None, race: Race = None) -> bool:
-        assert len([e for e in [server, race] if e is not None]) == 1
-        return DBWorker.update_search_session_params(user_id, server, race)
+    def update_search_session_params(user_id: int, param: SearchSessionParam, value) -> bool:
+        assert value is not None
+        return DBWorker.update_search_session_params(user_id, param, value)
 
     @staticmethod
     def wipe_sessions() -> bool:
