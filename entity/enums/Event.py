@@ -11,5 +11,13 @@ class Event(Enum):
     no_lots_found = 6,
     filtered_lots_found = 7,
     sell_menu = 8,
-    sell_input_server = 9,
-    sell_input_race = 10
+    new_lot_input_server = 9,
+    new_lot_input_race = 10,
+    new_lot_input_class = 11,
+    invalid_value = 12
+    new_lot_input_lvl = 13,
+    new_lot_input_heaven = 14,
+    new_lot_input_doll = 15,
+    new_lot_input_description = 16,
+    new_lot_input_price = 17,
+    new_lot_input_contacts = 18

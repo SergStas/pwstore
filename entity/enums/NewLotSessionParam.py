@@ -7,7 +7,7 @@ class NewLotSessionParam(Enum):
     lvl = 2,
     char_class = 3,
     description = 4,
-    heavens = 5,
+    heaven = 5,
     doll = 6,
     price = 7,
     contact_info = 8

@@ -1,6 +1,8 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from bot.SpellHandler import SpellHandler
 from bot.bot_utils import init_bot, check_user_session
+from bot.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, validate_doll, \
+    validate_price, validate_contacts
 from bot.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb
 from entity.dataclass.UserData import UserData
 from entity.enums.NewLotSessionParam import NewLotSessionParam
@@ -74,7 +76,7 @@ def __sell_menu_cb(call: CallbackQuery, value: str):
     if option == SellMenuOption.new_lot:
         __bot.send_message(
             chat_id=call.from_user.id,
-            text=SpellHandler.get_message(Event.sell_input_server),
+            text=SpellHandler.get_message(Event.new_lot_input_server),
             reply_markup=get_server_selector_kb('new_lot_server')
         )
     else:
@@ -82,25 +84,104 @@ def __sell_menu_cb(call: CallbackQuery, value: str):
 
 
 def __new_lot_server_cb(call: CallbackQuery, value: str):
-    __apply_param_default_cb(
+    __default_cb_handle(
         call=call,
         value=value,
         commit_func=lambda user_id, val:
-            DBController.update_sell_session_params(user_id, NewLotSessionParam.server, Server[val]),
-        spell_event=Event.sell_input_race,
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.server, Server[val]),
+        spell_event=Event.new_lot_input_race,
         reply_markup=get_race_select_kb('new_lot_race')
     )
-    # __bot.delete_message(call.from_user.id, call.message.id)
-    # DBController.update_sell_session_params(call.from_user.id, NewLotSessionParam.server, Server[value])
-    # __bot.send_message(
-    #     chat_id=call.from_user.id,
-    #     text=SpellHandler.get_message(Event.sell_input_race),
-    #     reply_markup=get_race_select_kb('new_lot_race')
-    # )
 
 
 def __new_lot_race_cb(call: CallbackQuery, value: str):
-    pass  # TODO
+    __bot.delete_message(call.from_user.id, call.message.id)
+    DBController.update_new_lot_session_params(call.from_user.id, NewLotSessionParam.race, Race[value])
+    __send(call.from_user.id, Event.new_lot_input_class)
+    __bot.register_next_step_handler(call.message, __new_lot_class_step)
+
+
+def __new_lot_class_step(message: Message):
+    __default_input_validation_step(
+        message=message,
+        validation_func=validate_class,
+        commit_func=lambda user_id, value:
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.char_class, value),
+        error_msg_arg='класса персонажа',
+        next_step=Event.new_lot_input_lvl,
+        next_step_handler=__new_lot_lvl_step
+    )
+
+
+def __new_lot_lvl_step(message: Message):
+    __default_input_validation_step(
+        message=message,
+        validation_func=validate_lvl,
+        commit_func=lambda user_id, value:
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.lvl, int(value)),
+        error_msg_arg='уровня персонажа',
+        next_step=Event.new_lot_input_heaven,
+        next_step_handler=__new_lot_heaven_step
+    )
+
+
+def __new_lot_heaven_step(message: Message):
+    __default_input_validation_step(
+        message=message,
+        validation_func=validate_heaven,
+        commit_func=lambda user_id, value:
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.heaven, value),
+        error_msg_arg='уровня неба персонажа',
+        next_step=Event.new_lot_input_doll,
+        next_step_handler=__new_lot_doll_step
+    )
+
+
+def __new_lot_doll_step(message: Message):
+    __default_input_validation_step(
+        message=message,
+        validation_func=validate_doll,
+        commit_func=lambda user_id, value:
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.doll, value),
+        error_msg_arg='куклы персонажа',
+        next_step=Event.new_lot_input_description,
+        next_step_handler=__new_lot_description_step
+    )
+
+
+def __new_lot_description_step(message: Message):
+    __default_input_validation_step(
+        message=message,
+        validation_func=validate_description,
+        commit_func=lambda user_id, value:
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.description, value),
+        error_msg_arg='описания персонажа',
+        next_step=Event.new_lot_input_price,
+        next_step_handler=__new_lot_price_step
+    )
+
+
+def __new_lot_price_step(message: Message):
+    __default_input_validation_step(
+        message=message,
+        validation_func=validate_price,
+        commit_func=lambda user_id, value:
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.price, float(value)),
+        error_msg_arg='цены на персонажа',
+        next_step=Event.new_lot_input_contacts,
+        next_step_handler=__new_lot_contacts_step
+    )
+
+
+def __new_lot_contacts_step(message: Message):
+    while not validate_contacts(message.text.strip()):
+        __send(message.from_user.id, Event.invalid_value, (message.text.strip(), 'контактов',))
+    DBController.update_new_lot_session_params(
+        message.from_user.id,
+        NewLotSessionParam.contact_info,
+        message.text.strip()
+    )
+    # TODO: add to bd
 
 
 def __search_race_cb(call: CallbackQuery, value: str):
@@ -119,7 +200,7 @@ def __search_race_cb(call: CallbackQuery, value: str):
 
 
 def __search_server_cb(call: CallbackQuery, value: str):
-    __apply_param_default_cb(
+    __default_cb_handle(
         call=call,
         value=value,
         commit_func=lambda user_id, val:
@@ -127,13 +208,6 @@ def __search_server_cb(call: CallbackQuery, value: str):
         spell_event=Event.search_select_race,
         reply_markup=get_race_select_kb('search_race')
     )
-    # __bot.delete_message(call.from_user.id, call.message.id)
-    # DBController.update_search_session_params(call.from_user.id, SearchSessionParam.server, Server[value])
-    # __bot.send_message(
-    #     chat_id=call.from_user.id,
-    #     text=SpellHandler.get_message(Event.search_select_race),
-    #     reply_markup=get_race_select_kb('search_race')
-    # )
 
 
 def __send(user_id: int, event: Event, args=None) -> None:
@@ -152,7 +226,7 @@ def start_bot():
     __bot.polling(none_stop=True)
 
 
-def __apply_param_default_cb(
+def __default_cb_handle(
         call: CallbackQuery,
         value,
         commit_func,
@@ -169,3 +243,18 @@ def __apply_param_default_cb(
         ),
         reply_markup=reply_markup
     )
+
+
+def __default_input_validation_step(
+        message: Message,
+        validation_func,
+        commit_func,
+        error_msg_arg: str,
+        next_step: Event,
+        next_step_handler
+):
+    while not validation_func(message.text.strip()):
+        __send(message.from_user.id, Event.invalid_value, (message.text.strip(), error_msg_arg,))
+    commit_func(message.from_user.id, message.text.strip())
+    __send(message.from_user.id, next_step)
+    __bot.register_next_step_handler(message, next_step_handler)

@@ -26,14 +26,30 @@ class SpellHandler:
             'Произошла ошибка, информация об активных лотах не найдена',
         Event.sell_menu:
             'Что вы хотите сделать?',
-        Event.sell_input_server:
+        Event.new_lot_input_server:
             'Укажите сервер вашего персонажа:',
-        Event.sell_input_race:
-            'Укажите расу:'
+        Event.new_lot_input_race:
+            'Укажите расу:',
+        Event.new_lot_input_class:
+            'Введите класс вашего персонажа:',
+        Event.new_lot_input_lvl:
+            'Введите уровень вашего персонажа:',
+        Event.new_lot_input_heaven:
+            'Укажите уровень неба вашего персонажа:',
+        Event.new_lot_input_doll:
+            'Укажите смылку на куклу:',
+        Event.new_lot_input_description:
+            'Напишите описание вашего персонажа:',
+        Event.new_lot_input_price:
+            'Укажите цену продажи:',
+        Event.new_lot_input_contacts:
+            'Укажите свои контакты, с помощью которых с вами можно связаться:',
     }
     __with_args = {
         Event.unknown_command:
             'Команда {0} не найдена, введите /help для получения помощи',
+        Event.invalid_value:
+            'Значение \'{0}\' некорректно для {1}, попробуйте еще раз'
     }
     __special = {
         Event.filtered_lots_found:

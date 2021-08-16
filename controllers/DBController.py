@@ -21,7 +21,7 @@ class DBController:
         return lots, Event.filtered_lots_found
 
     @staticmethod
-    def update_sell_session_params(user_id: int, param: NewLotSessionParam, value) -> bool:
+    def update_new_lot_session_params(user_id: int, param: NewLotSessionParam, value) -> bool:
         assert value is not None
         return DBWorker.update_new_lot_session_params(user_id, param, value)
 
