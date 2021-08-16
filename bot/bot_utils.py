@@ -2,6 +2,7 @@ import os
 
 import telebot
 
+from entity.dataclass.UserData import UserData
 from logger.Logger import Logger
 from controllers.DBController import DBController
 
@@ -15,8 +16,8 @@ def init_bot() -> telebot.TeleBot:
     return res_bot
 
 
-def check_user_session(user_id: int) -> bool:
-    DBController.register_session(user_id)
+def check_user_session(user: UserData) -> bool:
+    DBController.register_session(user)
     return False
 
 

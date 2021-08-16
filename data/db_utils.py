@@ -50,6 +50,8 @@ def drop_db() -> bool:
     result = execute_query('drop table character') and \
              execute_query('drop table user') and \
              execute_query('drop table lot') and \
-             execute_query('drop table session')
+             execute_query('drop table session') and \
+             execute_query('drop table search_session') and \
+             execute_query('drop table new_lot_session')
     Logger.debug(f'DB has been dropped')
     return result

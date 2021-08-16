@@ -1,6 +1,7 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from bot.SpellHandler import SpellHandler
 from bot.bot_utils import init_bot, check_user_session
+from entity.dataclass.UserData import UserData
 from entity.enums.Race import Race
 from entity.enums.Server import Server
 from entity.enums.Event import Event
@@ -106,7 +107,7 @@ def __send(user_id: int, event: Event, args=None) -> None:
 
 
 def __check_mes(message: Message, show_greeting=False):
-    if not check_user_session(message.from_user.id):
+    if not check_user_session(UserData(message.from_user.id)):
         if show_greeting:
             handle_greeting(message)
     Logger.debug(f'User {message.from_user.id} has sent message: {message.text}')

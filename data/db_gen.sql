@@ -31,8 +31,30 @@ create table lot
 create table session
 (
     session_id      integer primary key,
-    user_id         integer not null,
-    search_server   text,
-    search_race     text,
+    user_id         integer not null
+                        references user,
     session_start   timestamp not null
 );
+
+create table search_session
+(
+    session_id      integer primary key
+                        references session,
+    server          text,
+    race            text
+);
+
+create table new_lot_session
+(
+    session_id      integer primary key
+                        references session,
+    server          text,
+    race            text,
+    lvl             integer,
+    class           text,
+    description     text,
+    heavens         text,
+    doll            text,
+    price           float,
+    contact_info    text
+)

@@ -15,11 +15,11 @@ class DBWorker:
     @staticmethod
     def get_filtered_lots(user_id: int) -> [LotData]:
         try:
-            last_start = execute_query_with_cursor(f'select max(session_start) from session '
-                                                   f'where user_id = {user_id}')[0][0]
-            data = execute_query_with_cursor(f'select * from session '
-                                              f'where user_id = {user_id} and session_start = {last_start}')[0]
-            server, race = data[2], data[3]
+            session_id = DBWorker.__get_session_for_user(user_id)
+            assert session_id is not None
+            data = execute_query_with_cursor(f'select * from search_session '
+                                              f'where session_id = {session_id}')[0]
+            server, race = data[1], data[2]
             return [
                 e for e in DBWorker.get_all_active_lots() if e.char.server == server and e.char.race == race
             ]
@@ -31,19 +31,36 @@ class DBWorker:
     def update_search_session_params(user_id: int, server: Server = None, race: Race = None) -> bool:
         if server is None and race is None:
             return True
-        DBWorker.register_session(user_id)
-        server_token = f'search_server = \'{server.name}\'' if server is not None else ''
-        race_token = f'search_race = \'{race.name}\'' if race is not None else ''
+        assert DBWorker.is_user_registered(user_id)
+        server_token = f'server = \'{server.name}\'' if server is not None else ''
+        race_token = f'race = \'{race.name}\'' if race is not None else ''
         and_token = ' and ' if race is not None and server is not None else ''
-        return execute_query(
-            f'update session set {server_token}{and_token}{race_token} where user_id = {user_id}'
-        )
+        try:
+            session_id = DBWorker.__get_session_for_user(user_id)
+            assert session_id is not None
+            assert execute_query(
+                f'update search_session set {server_token}{and_token}{race_token} where session_id = {session_id}'
+            )
+            return True
+        except Exception as e:
+            Logger.error(f'Failed to update search params for user #{user_id}:\n\t\t\t{e}')
+            return False
 
     @staticmethod
-    def register_session(user_id: int) -> bool:
-        if DBWorker.is_session_registered(user_id):
+    def register_session(user: UserData) -> bool:
+        if DBWorker.is_session_registered(user.user_id):
             return True
-        return execute_query(f'insert into session values (null, {user_id}, null, null, {time.time()})')
+        try:
+            DBWorker.insert_user(user)
+            assert execute_query(f'insert into session values (null, {user.user_id}, {time.time()})')
+            session_id = DBWorker.__get_session_for_user(user.user_id)
+            assert session_id is not None
+            assert DBWorker.__new_ss(session_id)
+            assert DBWorker.__new_nls(session_id)
+            return True
+        except Exception as e:
+            Logger.error(f'Failed to create session for user #{user.user_id}:\n\t\t\t{e}')
+            return False
 
     @staticmethod
     def is_session_registered(user_id: int) -> bool:
@@ -51,7 +68,19 @@ class DBWorker:
 
     @staticmethod
     def wipe_sessions() -> bool:
-        return execute_query('delete from session where true')
+        try:
+            result = True
+            for session_id in execute_query_with_cursor(f'select * from session'):
+                result = result and DBWorker.__remove_session(int(session_id[0]))
+            assert result
+            return True
+        except Exception as e:
+            Logger.error(f'Failed to wipe sessions:\n\t\t\t{e}')
+            return False
+
+    @staticmethod
+    def is_user_registered(user_id: int) -> bool:
+        return len(execute_query_with_cursor(f'select * from user where user_id = {user_id}')) > 0
 
     @staticmethod
     def insert_user(user: UserData) -> bool:
@@ -117,6 +146,34 @@ class DBWorker:
                 execute_query_with_cursor(
                     f'select * from lot where user_id = {user.user_id} and date_close is not null'
                 )] if converted is not None]
+
+    @staticmethod
+    def __get_session_for_user(user_id: int) -> Optional[int]:
+        if not DBWorker.is_user_registered(user_id) or not DBWorker.is_session_registered(user_id):
+            return None
+        try:
+            return int(execute_query_with_cursor(f'select * from session where user_id = {user_id}')[0][0])
+        except Exception:
+            return None
+
+    @staticmethod
+    def __remove_session(session_id: int) -> bool:
+        ss = execute_query(f'delete from search_session where session_id = {session_id}')
+        nls = execute_query(f'delete from new_lot_session where session_id = {session_id}')
+        s = execute_query(f'delete from session where session_id = {session_id}')
+        return ss and nls and s
+
+    @staticmethod
+    def __new_ss(session_id: int) -> bool:
+        return execute_query(
+            f'insert into search_session values ({session_id}, null, null)'
+        )
+
+    @staticmethod
+    def __new_nls(session_id: int) -> bool:
+        return execute_query(
+            f'insert into new_lot_session values ({session_id}, null, null, null, null, null, null, null, null, null)'
+        )
 
     @staticmethod
     def __is_lot_already_opened(user: UserData, char: CharData) -> bool:

@@ -20,6 +20,7 @@ class DBController:
 
     @staticmethod
     def update_search_session_params(user_id: int, server: Server = None, race: Race = None) -> bool:
+        assert len([e for e in [server, race] if e is not None]) == 1
         return DBWorker.update_search_session_params(user_id, server, race)
 
     @staticmethod
@@ -30,10 +31,10 @@ class DBController:
         return result
 
     @staticmethod
-    def register_session(user_id: int) -> bool:
-        if not DBWorker.is_session_registered(user_id):
-            Logger.debug(f'Session for user {user_id} has been registered')
-        return DBWorker.register_session(user_id)
+    def register_session(user: UserData) -> bool:
+        if not DBWorker.is_session_registered(user.user_id):
+            Logger.debug(f'Session for user {user.user_id} has been registered')
+        return DBWorker.register_session(user)
 
     @staticmethod
     def register_new_lot(user: UserData, char: CharData, price: float, contact_info: str) -> bool:
