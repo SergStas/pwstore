@@ -1,6 +1,5 @@
-from typing import Optional
-
 from entity.enums.Event import Event
+from entity.enums.Server import Server
 
 
 class SpellHandler:
@@ -54,17 +53,25 @@ class SpellHandler:
         Event.unknown_command:
             'Команда {0} не найдена, введите /help для получения помощи',
         Event.invalid_value:
-            'Значение \'{0}\' некорректно для {1}, попробуйте еще раз'
+            'Значение \'{0}\' некорректно для {1}, попробуйте еще раз',
+        Event.show_lots_indices:
+            'Показаны лоты с {0} по {1}, страница #{2}'
     }
-    __special = {
+    __word_forms = {
         Event.filtered_lots_found:
             'По вашему запросу найден{0} {1} лот{2} персонажей'
+    }
+    __templates = {
+        Event.lot_info_button_template:
+            '[{0}] {1} Lvl {2}: {3} rub'
     }
 
     @staticmethod
     def get_message(event: Event, args=None) -> str:
-        if event in SpellHandler.__special:
-            return SpellHandler.handle_special(event, args)
+        if event in SpellHandler.__templates:
+            return SpellHandler.__handle_template(event, args)
+        if event in SpellHandler.__word_forms:
+            return SpellHandler.__handle_word_forms(event, args)
         if event not in SpellHandler.__no_arg.keys() and event not in SpellHandler.__with_args.keys():
             raise Exception(f'Spell event \'{event.name}\' not found in a dictionary')
         if event in SpellHandler.__no_arg:
@@ -74,7 +81,7 @@ class SpellHandler:
         return SpellHandler.__with_args[event].format(*args)
 
     @staticmethod
-    def handle_special(event: Event, args) -> Optional[str]:
+    def __handle_word_forms(event: Event, args) -> str:
         if args is None:
             raise Exception(f'Spell event {event.name} requires args!')
         count = int(args[0])
@@ -82,5 +89,12 @@ class SpellHandler:
             format_args = ('', args[0], '',) if count == 1 else \
                 ('о', args[0], 'а',) if 1 < count < 5 else \
                 ('о', args[0], 'ов',)
-            return SpellHandler.__special[event].format(*format_args)
+            return SpellHandler.__word_forms[event].format(*format_args)
 
+    @staticmethod
+    def __handle_template(event: Event, args) -> str:
+        if args is None:
+            raise Exception(f'Template {event.name} requires args!')
+        if event == Event.lot_info_button_template:
+            format_args = (args[0].name.upper(), args[1].name, args[2], args[3],)
+            return SpellHandler.__templates[event].format(*format_args)

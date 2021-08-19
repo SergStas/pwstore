@@ -1,5 +1,8 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from bot.SpellHandler import SpellHandler
+from entity.dataclass.LotData import LotData
+from entity.enums.Event import Event
 from entity.enums.Race import Race
 from entity.enums.SellMenuOption import SellMenuOption
 from entity.enums.Server import Server
@@ -40,6 +43,28 @@ def get_server_selector_kb(cb_key: str) -> InlineKeyboardMarkup:
     kb.add(InlineKeyboardButton(text='Саргас', callback_data=enc_cb_data(cb_key, Server.sargaz.name)))
     kb.add(InlineKeyboardButton(text='Гиперион', callback_data=enc_cb_data(cb_key, Server.hyperion.name)))
     return kb
+
+
+def get_search_results_kb(lots: [LotData], page: int, cb_key: str, page_size: int = 10) -> InlineKeyboardMarkup:
+    result = InlineKeyboardMarkup()
+    sublist = lots[(page * page_size):][:page_size]
+    for lot in sublist:
+        result.add(InlineKeyboardButton(
+            text=SpellHandler.get_message(
+                Event.lot_info_button_template,
+                (lot.char.server, lot.char.race, lot.char.lvl, lot.price)
+            ),
+            callback_data=enc_cb_data(cb_key, str(lot.lot_id))
+        ))
+    b_next = InlineKeyboardButton(text='>>', callback_data=enc_cb_data(cb_key, f'page_{page + 1}'))
+    b_prev = InlineKeyboardButton(text='<<', callback_data=enc_cb_data(cb_key, f'page_{page - 1}'))
+    if page > 0 and len(lots) > (page + 1) * page_size:
+        result.row(b_prev, b_next)
+    elif page > 0:
+        result.add(b_prev)
+    elif len(lots) > (page + 1) * page_size:
+        result.add(b_next)
+    return result
 
 
 def enc_cb_data(key: str, value: str) -> str:

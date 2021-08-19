@@ -52,11 +52,12 @@ class DBWorker:  # TODO: assertion error handling
             session_id = DBWorker.__get_session_for_user(user_id)
             assert session_id is not None
             data = execute_query_with_cursor(f'select * from search_session '
-                                              f'where session_id = {session_id}')[0]
+                                             f'where session_id = {session_id}')[0]
             server, race = data[1], data[2]
+            print(server, race)
             return [
-                e for e in DBWorker.get_all_active_lots() if e.char.server == server and e.char.race == race and \
-                e.user.user_id != {user_id}
+                e for e in DBWorker.get_all_active_lots()
+                if e.char.server.name == server and e.char.race.name == race and e.user.user_id != {user_id}
             ]
         except Exception as e:
             Logger.error(f'Failed to get filtered lots:\n\t\t\t{e}')
@@ -177,9 +178,9 @@ class DBWorker:  # TODO: assertion error handling
     @staticmethod
     def get_user_lots(user: UserData):
         return [converted for converted in [DBWorker.__lot_data_from_tuple(e) for e in
-                execute_query_with_cursor(
-                    f'select * from lot where user_id = {user.user_id} and date_close is not null'
-                )] if converted is not None]
+                                            execute_query_with_cursor(
+                                                f'select * from lot where user_id = {user.user_id} and date_close is not null'
+                                            )] if converted is not None]
 
     @staticmethod
     def __get_session_for_user(user_id: int) -> Optional[int]:
@@ -280,9 +281,9 @@ class DBWorker:  # TODO: assertion error handling
     def __user_data_from_tuple(data) -> UserData:
         return DBWorker.__handle_error(
             lambda:
-                UserData(
-                    user_id=data[0]
-                ),
+            UserData(
+                user_id=data[0]
+            ),
             'Failed to load user info'
         )
 
@@ -290,16 +291,16 @@ class DBWorker:  # TODO: assertion error handling
     def __char_data_from_tuple(data) -> Optional[CharData]:
         return DBWorker.__handle_error(
             lambda:
-                CharData(
-                    server=Server[data[1]],
-                    race=Race[data[2]],
-                    lvl=data[3],
-                    char_class=data[4],
-                    description=data[5],
-                    heavens=data[6],
-                    doll=data[7],
-                    char_id=data[0]
-                ),
+            CharData(
+                server=Server[data[1]],
+                race=Race[data[2]],
+                lvl=data[3],
+                char_class=data[4],
+                description=data[5],
+                heavens=data[6],
+                doll=data[7],
+                char_id=data[0]
+            ),
             'Failed to load character info'
         )
 

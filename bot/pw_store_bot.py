@@ -3,7 +3,9 @@ from bot.SpellHandler import SpellHandler
 from bot.bot_utils import init_bot, check_user_session
 from bot.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, validate_doll, \
     validate_price, validate_contacts
-from bot.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb
+from bot.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb, \
+    get_search_results_kb
+from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
 from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
@@ -79,8 +81,10 @@ def __sell_menu_cb(call: CallbackQuery, value: str):
             text=SpellHandler.get_message(Event.new_lot_input_server),
             reply_markup=get_server_selector_kb('new_lot_server')
         )
-    else:
+    elif option == SellMenuOption.show_lots:
         pass  # TODO
+    else:
+        pass
 
 
 def __new_lot_server_cb(call: CallbackQuery, value: str):
@@ -203,12 +207,18 @@ def __search_race_cb(call: CallbackQuery, value: str):
     if event == Event.no_lots_found or event == Event.db_error:
         __send(call.from_user.id, event)
         return
+    __send(call.from_user.id, Event.filtered_lots_found, (len(lots),))
+    __send_page_message(0, lots, call.from_user.id)  # TODO: cb
+
+
+def __send_page_message(page: int, lots: [LotData], user_id: int, size=10):
+    start = page * size
+    end = min(len(lots), (page + 1) * size) - 1
     __bot.send_message(
-        chat_id=call.from_user.id,
-        text=SpellHandler.get_message(Event.filtered_lots_found, (len(lots),)),
-        reply_markup=None
+        chat_id=user_id,
+        text=SpellHandler.get_message(Event.show_lots_indices, (start, end, page,)),
+        reply_markup=get_search_results_kb(lots, page, 'search_lot', size)
     )
-    # TODO: show lots
 
 
 def __search_server_cb(call: CallbackQuery, value: str):
