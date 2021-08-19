@@ -1,6 +1,6 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot.SpellHandler import SpellHandler
+from bot.spell.SpellHandler import SpellHandler
 from entity.dataclass.LotData import LotData
 from entity.enums.Event import Event
 from entity.enums.Race import Race

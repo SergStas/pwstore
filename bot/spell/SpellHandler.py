@@ -1,5 +1,4 @@
 from entity.enums.Event import Event
-from entity.enums.Server import Server
 
 
 class SpellHandler:

@@ -1,9 +1,9 @@
 from telebot.types import Message, CallbackQuery
-from bot.SpellHandler import SpellHandler
-from bot.bot_utils import init_bot, check_user_session
-from bot.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, validate_doll, \
+from bot.spell.SpellHandler import SpellHandler
+from bot.utils.bot_utils import init_bot, check_user_session
+from bot.validation.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, validate_doll, \
     validate_price, validate_contacts
-from bot.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb, \
+from bot.utils.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb, \
     get_search_results_kb
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
@@ -67,9 +67,15 @@ def callback_handler(call: CallbackQuery):
         'search_race': __search_race_cb,
         'sell_menu': __sell_menu_cb,
         'new_lot_server': __new_lot_server_cb,
-        'new_lot_race': __new_lot_race_cb
+        'new_lot_race': __new_lot_race_cb,
+        'search_lot': __search_lot_cb_handler
     }
     key_dict[key](call, value)
+
+
+def __search_lot_cb_handler(call: CallbackQuery, value):
+    if 'page_' in value:
+        page = int(value.split('_')[1])
 
 
 def __sell_menu_cb(call: CallbackQuery, value: str):
@@ -208,7 +214,7 @@ def __search_race_cb(call: CallbackQuery, value: str):
         __send(call.from_user.id, event)
         return
     __send(call.from_user.id, Event.filtered_lots_found, (len(lots),))
-    __send_page_message(0, lots, call.from_user.id)  # TODO: cb
+    __send_page_message(0, lots, call.from_user.id)
 
 
 def __send_page_message(page: int, lots: [LotData], user_id: int, size=10):
