@@ -22,8 +22,7 @@ class DBWorker:  # TODO: assertion error handling
             data = execute_query_with_cursor(f'select * from new_lot_session where session_id = {session_id}')[0]
             for e in data:
                 assert e is not None
-            user = UserData(user_id)
-            result = DBWorker.__get_lot_data_from_nls(data, user)
+            result = DBWorker.__get_lot_data_from_nls(data, user_id)
             assert result is not None
             return result
         except Exception as e:
@@ -54,10 +53,9 @@ class DBWorker:  # TODO: assertion error handling
             data = execute_query_with_cursor(f'select * from search_session '
                                              f'where session_id = {session_id}')[0]
             server, race = data[1], data[2]
-            print(server, race)
             return [
                 e for e in DBWorker.get_all_active_lots()
-                if e.char.server.name == server and e.char.race.name == race and e.user.user_id != {user_id}
+                if e.char.server.name == server and e.char.race.name == race
             ]
         except Exception as e:
             Logger.error(f'Failed to get filtered lots:\n\t\t\t{e}')
@@ -121,7 +119,11 @@ class DBWorker:  # TODO: assertion error handling
     def insert_user(user: UserData) -> bool:
         if DBWorker.__find_user(user) is not None:
             return True
-        result = execute_query(f'insert into user values ({user.user_id})')
+        result = execute_query(f'insert into user values ('
+                               f'{user.user_id}, '
+                               f'\'{user.username}\', '
+                               f'\'{user.full_name}\''
+                               f')')
         if result:
             Logger.debug(f'New user has been registered, id = {user.user_id}')
         return result
@@ -179,7 +181,8 @@ class DBWorker:  # TODO: assertion error handling
     def get_user_lots(user: UserData):
         return [converted for converted in [DBWorker.__lot_data_from_tuple(e) for e in
                                             execute_query_with_cursor(
-                                                f'select * from lot where user_id = {user.user_id} and date_close is not null'
+                                                f'select * from lot where user_id = {user.user_id} and '
+                                                f'date_close is not null'
                                             )] if converted is not None]
 
     @staticmethod
@@ -282,7 +285,9 @@ class DBWorker:  # TODO: assertion error handling
         return DBWorker.__handle_error(
             lambda:
             UserData(
-                user_id=data[0]
+                user_id=data[0],
+                username=data[1],
+                full_name=data[2]
             ),
             'Failed to load user info'
         )
@@ -305,8 +310,11 @@ class DBWorker:  # TODO: assertion error handling
         )
 
     @staticmethod
-    def __get_lot_data_from_nls(data, user: UserData) -> Optional[LotData]:
+    def __get_lot_data_from_nls(data, user_id: int) -> Optional[LotData]:
         try:
+            user_tuple = execute_query_with_cursor(
+                f'select * from user where user_id = {user_id}'
+            )[0]
             return LotData(
                 char=CharData(
                     server=Server[data[1]],
@@ -317,7 +325,7 @@ class DBWorker:  # TODO: assertion error handling
                     heavens=data[6],
                     doll=data[7]
                 ),
-                user=user,
+                user=DBWorker.__user_data_from_tuple(user_tuple),
                 price=data[8],
                 contact_info=data[9],
                 date_opened=datetime.datetime.fromtimestamp(time.time())

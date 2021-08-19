@@ -12,7 +12,9 @@ create table character
 
 create table user
 (
-    user_id         integer primary key
+    user_id         integer primary key,
+    username        text not null,
+    full_name       text not null
 );
 
 create table lot

@@ -237,7 +237,8 @@ def __send(user_id: int, event: Event, args=None) -> None:
 
 
 def __check_mes(message: Message, show_greeting=False):
-    if not check_user_session(UserData(message.from_user.id)):
+    user = UserData(message.from_user.id, message.from_user.username, message.from_user.full_name)
+    if not check_user_session(user):
         if show_greeting:
             handle_greeting(message)
     Logger.debug(f'User {message.from_user.id} has sent message: {message.text}')
