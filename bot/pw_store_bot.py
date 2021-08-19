@@ -1,4 +1,4 @@
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from telebot.types import Message, CallbackQuery
 from bot.SpellHandler import SpellHandler
 from bot.bot_utils import init_bot, check_user_session
 from bot.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, validate_doll, \
@@ -109,7 +109,8 @@ def __new_lot_class_step(message: Message):
             DBController.update_new_lot_session_params(user_id, NewLotSessionParam.char_class, value),
         error_msg_arg='класса персонажа',
         next_step=Event.new_lot_input_lvl,
-        next_step_handler=__new_lot_lvl_step
+        next_step_handler=__new_lot_lvl_step,
+        handler_self_ref=__new_lot_class_step
     )
 
 
@@ -121,7 +122,8 @@ def __new_lot_lvl_step(message: Message):
             DBController.update_new_lot_session_params(user_id, NewLotSessionParam.lvl, int(value)),
         error_msg_arg='уровня персонажа',
         next_step=Event.new_lot_input_heaven,
-        next_step_handler=__new_lot_heaven_step
+        next_step_handler=__new_lot_heaven_step,
+        handler_self_ref=__new_lot_lvl_step
     )
 
 
@@ -130,10 +132,11 @@ def __new_lot_heaven_step(message: Message):
         message=message,
         validation_func=validate_heaven,
         commit_func=lambda user_id, value:
-            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.heaven, value),
+            DBController.update_new_lot_session_params(user_id, NewLotSessionParam.heavens, value),
         error_msg_arg='уровня неба персонажа',
         next_step=Event.new_lot_input_doll,
-        next_step_handler=__new_lot_doll_step
+        next_step_handler=__new_lot_doll_step,
+        handler_self_ref=__new_lot_heaven_step
     )
 
 
@@ -145,7 +148,8 @@ def __new_lot_doll_step(message: Message):
             DBController.update_new_lot_session_params(user_id, NewLotSessionParam.doll, value),
         error_msg_arg='куклы персонажа',
         next_step=Event.new_lot_input_description,
-        next_step_handler=__new_lot_description_step
+        next_step_handler=__new_lot_description_step,
+        handler_self_ref=__new_lot_doll_step
     )
 
 
@@ -157,7 +161,8 @@ def __new_lot_description_step(message: Message):
             DBController.update_new_lot_session_params(user_id, NewLotSessionParam.description, value),
         error_msg_arg='описания персонажа',
         next_step=Event.new_lot_input_price,
-        next_step_handler=__new_lot_price_step
+        next_step_handler=__new_lot_price_step,
+        handler_self_ref=__new_lot_description_step
     )
 
 
@@ -169,19 +174,26 @@ def __new_lot_price_step(message: Message):
             DBController.update_new_lot_session_params(user_id, NewLotSessionParam.price, float(value)),
         error_msg_arg='цены на персонажа',
         next_step=Event.new_lot_input_contacts,
-        next_step_handler=__new_lot_contacts_step
+        next_step_handler=__new_lot_contacts_step,
+        handler_self_ref=__new_lot_price_step
     )
 
 
 def __new_lot_contacts_step(message: Message):
-    while not validate_contacts(message.text.strip()):
+    if not validate_contacts(message.text.strip()):
         __send(message.from_user.id, Event.invalid_value, (message.text.strip(), 'контактов',))
+        __bot.register_next_step_handler(message, __new_lot_contacts_step)
+        return
     DBController.update_new_lot_session_params(
         message.from_user.id,
         NewLotSessionParam.contact_info,
         message.text.strip()
     )
-    # TODO: add to bd
+    add_result = DBController.create_lot(message.from_user.id)
+    __send(
+        message.from_user.id,
+        Event.new_lot_success if add_result else Event.new_lot_fail
+    )
 
 
 def __search_race_cb(call: CallbackQuery, value: str):
@@ -251,10 +263,13 @@ def __default_input_validation_step(
         commit_func,
         error_msg_arg: str,
         next_step: Event,
-        next_step_handler
+        next_step_handler,
+        handler_self_ref
 ):
-    while not validation_func(message.text.strip()):
+    if not validation_func(message.text.strip()):
         __send(message.from_user.id, Event.invalid_value, (message.text.strip(), error_msg_arg,))
+        __bot.register_next_step_handler(message, handler_self_ref)
+        return
     commit_func(message.from_user.id, message.text.strip())
     __send(message.from_user.id, next_step)
     __bot.register_next_step_handler(message, next_step_handler)

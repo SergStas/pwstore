@@ -37,13 +37,18 @@ class SpellHandler:
         Event.new_lot_input_heaven:
             'Укажите уровень неба вашего персонажа:',
         Event.new_lot_input_doll:
-            'Укажите смылку на куклу:',
+            'Укажите ссылку на куклу:',
         Event.new_lot_input_description:
             'Напишите описание вашего персонажа:',
         Event.new_lot_input_price:
             'Укажите цену продажи:',
         Event.new_lot_input_contacts:
             'Укажите свои контакты, с помощью которых с вами можно связаться:',
+        Event.new_lot_success:
+            'Персонаж успешно выставлен на продажу\n'
+            'Зайдите в меню /sell чтобы просмотреть список выставленных на продажу персонажей',
+        Event.new_lot_fail:
+            'Возникла непредвиденная ошибка: не удалось выставить персонажа на продажу'
     }
     __with_args = {
         Event.unknown_command:

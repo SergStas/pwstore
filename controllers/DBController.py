@@ -1,3 +1,5 @@
+from typing import Optional
+
 from data.DBWorker import DBWorker
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
@@ -11,6 +13,14 @@ from logger.Logger import Logger
 
 
 class DBController:
+    @staticmethod
+    def create_lot(user_id: int) -> bool:
+        lot = DBWorker.get_saved_nls_params(user_id)
+        if lot is None:
+            return False
+        result = DBWorker.open_lot(lot.user, lot.char, lot.price, lot.contact_info)
+        return result
+
     @staticmethod
     def get_filtered_lots(user_id: int) -> ([LotData], Event):
         lots = DBWorker.get_filtered_lots(user_id)

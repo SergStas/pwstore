@@ -15,6 +15,22 @@ from logger.Logger import Logger
 
 class DBWorker:  # TODO: assertion error handling
     @staticmethod
+    def get_saved_nls_params(user_id: int) -> Optional[LotData]:
+        try:
+            session_id = DBWorker.__get_session_for_user(user_id)
+            assert session_id is not None
+            data = execute_query_with_cursor(f'select * from new_lot_session where session_id = {session_id}')[0]
+            for e in data:
+                assert e is not None
+            user = UserData(user_id)
+            result = DBWorker.__get_lot_data_from_nls(data, user)
+            assert result is not None
+            return result
+        except Exception as e:
+            Logger.error(f'Failed to create new lot for user #{user_id}:\n\t\t\t{e}')
+            return None
+
+    @staticmethod
     def update_new_lot_session_params(user_id: int, param: NewLotSessionParam, value) -> bool:
         try:
             session_id = DBWorker.__get_session_for_user(user_id)
@@ -39,7 +55,8 @@ class DBWorker:  # TODO: assertion error handling
                                               f'where session_id = {session_id}')[0]
             server, race = data[1], data[2]
             return [
-                e for e in DBWorker.get_all_active_lots() if e.char.server == server and e.char.race == race
+                e for e in DBWorker.get_all_active_lots() if e.char.server == server and e.char.race == race and \
+                e.user.user_id != {user_id}
             ]
         except Exception as e:
             Logger.error(f'Failed to get filtered lots:\n\t\t\t{e}')
@@ -285,6 +302,28 @@ class DBWorker:  # TODO: assertion error handling
                 ),
             'Failed to load character info'
         )
+
+    @staticmethod
+    def __get_lot_data_from_nls(data, user: UserData) -> Optional[LotData]:
+        try:
+            return LotData(
+                char=CharData(
+                    server=Server[data[1]],
+                    race=Race[data[2]],
+                    lvl=data[3],
+                    char_class=data[4],
+                    description=data[5],
+                    heavens=data[6],
+                    doll=data[7]
+                ),
+                user=user,
+                price=data[8],
+                contact_info=data[9],
+                date_opened=datetime.datetime.fromtimestamp(time.time())
+            )
+        except Exception as e:
+            Logger.error(f'Failed to get lot data from saved params:\n\t\t\t{e}')
+            return None
 
     @staticmethod
     def __lot_data_from_tuple(data) -> Optional[LotData]:
