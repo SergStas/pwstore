@@ -75,7 +75,29 @@ def callback_handler(call: CallbackQuery):
 
 def __search_lot_cb_handler(call: CallbackQuery, value):
     if 'page_' in value:
+        __bot.delete_message(call.from_user.id, call.message.id)
         page = int(value.split('_')[1])
+        __proceed_lots_request(call.from_user.id, page)
+        return
+    lot_id = int(value)
+    lot = DBController.get_lot(lot_id)
+    __send(
+        call.from_user.id,
+        Event.lot_info_template,
+        (
+            lot.char.server,
+            lot.char.race,
+            lot.char.lvl,
+            lot.char.char_class,
+            lot.char.heavens,
+            lot.char.doll,
+            lot.price,
+            lot.user.username,
+            lot.contact_info,
+            lot.date_opened,
+            lot.char.description
+        )
+    )
 
 
 def __sell_menu_cb(call: CallbackQuery, value: str):
@@ -88,9 +110,10 @@ def __sell_menu_cb(call: CallbackQuery, value: str):
             reply_markup=get_server_selector_kb('new_lot_server')
         )
     elif option == SellMenuOption.show_lots:
-        pass  # TODO
+        user_lots = DBController.get_user_lots(call.from_user.id)
+        __send_page_message(0, user_lots, call.from_user.id, 'user_lots')  # FIXME
     else:
-        pass
+        pass  # TODO
 
 
 def __new_lot_server_cb(call: CallbackQuery, value: str):
@@ -209,21 +232,25 @@ def __new_lot_contacts_step(message: Message):
 def __search_race_cb(call: CallbackQuery, value: str):
     __bot.delete_message(call.from_user.id, call.message.id)
     DBController.update_search_session_params(call.from_user.id, SearchSessionParam.race, Race[value])
-    lots, event = DBController.get_filtered_lots(call.from_user.id)
+    __proceed_lots_request(call.from_user.id)
+
+
+def __proceed_lots_request(user_id: int, page: int = 0):
+    lots, event = DBController.get_filtered_lots(user_id)
     if event == Event.no_lots_found or event == Event.db_error:
-        __send(call.from_user.id, event)
+        __send(user_id, event)
         return
-    __send(call.from_user.id, Event.filtered_lots_found, (len(lots),))
-    __send_page_message(0, lots, call.from_user.id)
+    __send(user_id, Event.filtered_lots_found, (len(lots),))
+    __send_page_message(page, lots, user_id, 'search_race')
 
 
-def __send_page_message(page: int, lots: [LotData], user_id: int, size=10):
+def __send_page_message(page: int, lots: [LotData], user_id: int, key: str, size=10):
     start = page * size
     end = min(len(lots), (page + 1) * size) - 1
     __bot.send_message(
         chat_id=user_id,
         text=SpellHandler.get_message(Event.show_lots_indices, (start, end, page,)),
-        reply_markup=get_search_results_kb(lots, page, 'search_lot', size)
+        reply_markup=get_search_results_kb(lots, page, key, size)
     )
 
 

@@ -14,6 +14,10 @@ from logger.Logger import Logger
 
 class DBController:
     @staticmethod
+    def get_lot(lot_id: int) -> LotData:
+        return DBWorker.get_lot(lot_id)
+
+    @staticmethod
     def create_lot(user_id: int) -> bool:
         lot = DBWorker.get_saved_nls_params(user_id)
         if lot is None:
@@ -73,5 +77,5 @@ class DBController:
                 if lot.char.race == race and lot.char.server == server]
 
     @staticmethod
-    def get_user_lots(user: UserData) -> [LotData]:
-        return DBWorker.get_user_lots(user)
+    def get_user_lots(user_id: int) -> [LotData]:
+        return DBWorker.get_user_lots(user_id)

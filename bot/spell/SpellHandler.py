@@ -1,4 +1,5 @@
 from entity.enums.Event import Event
+from entity.enums.Race import Race
 
 
 class SpellHandler:
@@ -62,7 +63,20 @@ class SpellHandler:
     }
     __templates = {
         Event.lot_info_button_template:
-            '[{0}] {1} Lvl {2}: {3} rub'
+            '[{0}] {1} ур.{2}: {3} rub',
+        Event.lot_info_template:
+            'Сервер: {0}\n'
+            'Раса: {1}\n'
+            'Уровень: {2}\n'
+            'Класс: {3}\n'
+            'Небо: {4}\n'
+            'Кукла: {5}\n'
+            '---------------------\n'
+            'ЦЕНА = {6} руб.\n'
+            'Продавец: @{7}\n'
+            'Контактные данные продавца: {8}\n'
+            'Персонаж выставлен на продажу {9}\n'
+            'Описание персонажа: {10}'
     }
 
     @staticmethod
@@ -95,5 +109,22 @@ class SpellHandler:
         if args is None:
             raise Exception(f'Template {event.name} requires args!')
         if event == Event.lot_info_button_template:
-            format_args = (args[0].name.upper(), args[1].name, args[2], args[3],)
+            format_args = (args[0].name.upper(), SpellHandler.__race_rus(args[1]), args[2], args[3],)
             return SpellHandler.__templates[event].format(*format_args)
+        if event == Event.lot_info_template:
+            format_args = (
+                args[0].name.upper(),
+                SpellHandler.__race_rus(args[1]).lower(),
+                args[2], args[3], args[4], args[5],
+                args[6], args[7], args[8], args[9], args[10],
+            )
+            return SpellHandler.__templates[event].format(*format_args)
+
+    @staticmethod
+    def __race_rus(race: Race) -> str:
+        return 'Человек' if race == Race.human else \
+            'Зооморф' if race == Race.untamed else \
+            'Сид' if race == Race.winged_elf else \
+            'Амфибия' if race == Race.tideborn else \
+            'Древний' if race == Race.earthguard else \
+            'Тень'

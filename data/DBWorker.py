@@ -15,6 +15,19 @@ from logger.Logger import Logger
 
 class DBWorker:  # TODO: assertion error handling
     @staticmethod
+    def get_lot(lot_id: int) -> Optional[LotData]:
+        try:
+            lot_data = execute_query_with_cursor(
+                f'select * from lot where lot_id = {lot_id}'
+            )[0]
+            result = DBWorker.__lot_data_from_tuple(lot_data)
+            assert result is not None
+            return result
+        except Exception as e:
+            Logger.error(f'Lot #{lot_id} not found:\n\t\t\t{e}')
+            return None
+
+    @staticmethod
     def get_saved_nls_params(user_id: int) -> Optional[LotData]:
         try:
             session_id = DBWorker.__get_session_for_user(user_id)
@@ -178,10 +191,10 @@ class DBWorker:  # TODO: assertion error handling
             return False
 
     @staticmethod
-    def get_user_lots(user: UserData):
+    def get_user_lots(user_id: int):
         return [converted for converted in [DBWorker.__lot_data_from_tuple(e) for e in
                                             execute_query_with_cursor(
-                                                f'select * from lot where user_id = {user.user_id} and '
+                                                f'select * from lot where user_id = {user_id} and '
                                                 f'date_close is not null'
                                             )] if converted is not None]
 
