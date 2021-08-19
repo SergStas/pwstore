@@ -20,4 +20,6 @@ class Event(Enum):
     new_lot_input_doll = 15,
     new_lot_input_description = 16,
     new_lot_input_price = 17,
-    new_lot_input_contacts = 18
+    new_lot_input_contacts = 18,
+    new_lot_success = 19,
+    new_lot_fail = 20
