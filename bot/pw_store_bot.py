@@ -1,3 +1,4 @@
+from telebot import TeleBot
 from telebot.types import Message, CallbackQuery
 
 from bot.feature.close_lot_handlers import close_lot_cb, close_conf_cb
@@ -23,11 +24,7 @@ __bot = init_bot()
 @__bot.message_handler(commands=['start'])
 def handle_greeting(message: Message):
     __check_mes(message)
-    __bot.send_message(
-        chat_id=message.from_user.id,
-        text=SpellHandler.get_message(Event.first_launch),
-        reply_markup=get_main_menu_kb('main_menu')
-    )
+    __send_greeting(message.from_user.id)
 
 
 @__bot.message_handler(commands=['help'])
@@ -67,9 +64,24 @@ def callback_handler(call: CallbackQuery):
         'user_lots': user_lots_cb,
         'close': close_lot_cb,
         'close_conf': close_conf_cb,
-        'main_menu': main_menu_cb
+        'main_menu': main_menu_cb,
+        'back_to_mm': __handle_back_to_mm
     }
     key_dict[key](call, value, __bot)
+
+
+def __handle_back_to_mm(call: CallbackQuery, value: str, bot: TeleBot):
+    bot.delete_message(call.from_user.id, call.message.message_id)
+    bot.clear_step_handler_by_chat_id(call.from_user.id)
+    __send_greeting(call.from_user.id)
+
+
+def __send_greeting(user_id: int):
+    __bot.send_message(
+        chat_id=user_id,
+        text=SpellHandler.get_message(Event.first_launch),
+        reply_markup=get_main_menu_kb('main_menu')
+    )
 
 
 def __check_mes(message: Message, show_greeting=False):

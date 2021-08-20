@@ -2,7 +2,7 @@ from telebot import TeleBot
 from telebot.types import CallbackQuery, Message
 
 from bot.spell.SpellHandler import SpellHandler
-from bot.utils.ui_constr import get_search_results_kb
+from bot.utils.ui_constr import get_search_results_kb, get_return_kb
 from controllers.DBController import DBController
 from entity.dataclass.LotData import LotData
 from entity.enums.Event import Event
@@ -43,7 +43,11 @@ def default_input_validation_step(
         bot.register_next_step_handler(message, handler_self_ref)
         return
     commit_func(message.from_user.id, message.text.strip())
-    send(bot, message.from_user.id, next_step)
+    bot.send_message(
+        message.from_user.id,
+        SpellHandler.get_message(next_step),
+        reply_markup=get_return_kb()
+    )
     bot.register_next_step_handler(message, next_step_handler)
 
 

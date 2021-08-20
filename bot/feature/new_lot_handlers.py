@@ -3,8 +3,9 @@ from typing import Optional
 from telebot import TeleBot
 from telebot.types import CallbackQuery, Message
 
+from bot.spell.SpellHandler import SpellHandler
 from bot.utils.cb_utils import default_cb_handler, send, default_input_validation_step
-from bot.utils.ui_constr import get_race_select_kb
+from bot.utils.ui_constr import get_race_select_kb, get_return_kb
 from bot.validation.input_validation import validate_class, validate_lvl, validate_heaven, validate_doll, \
     validate_description, validate_price, validate_contacts
 from controllers.DBController import DBController
@@ -12,7 +13,6 @@ from entity.enums.Event import Event
 from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
 from entity.enums.Server import Server
-
 
 __bot: Optional[TeleBot] = None
 
@@ -34,7 +34,11 @@ def new_lot_race_cb(call: CallbackQuery, value: str, bot: TeleBot):
     __set_bot(bot)
     bot.delete_message(call.from_user.id, call.message.id)
     DBController.update_new_lot_session_params(call.from_user.id, NewLotSessionParam.race, Race[value])
-    send(bot, call.from_user.id, Event.new_lot_input_class)
+    bot.send_message(
+        call.from_user.id,
+        text=SpellHandler.get_message(Event.new_lot_input_class),
+        reply_markup=get_return_kb()
+    )
     bot.register_next_step_handler(call.message, __new_lot_class_step)
 
 
