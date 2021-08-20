@@ -15,12 +15,8 @@ def get_sell_menu_kb(cb_key: str) -> InlineKeyboardMarkup:
         callback_data=enc_cb_data(cb_key, SellMenuOption.new_lot.name))
     )
     kb.add(InlineKeyboardButton(
-        text='Просмотреть ваши активные лоты',
+        text='Управление активными лотами',
         callback_data=enc_cb_data(cb_key, SellMenuOption.show_lots.name))
-    )
-    kb.add(InlineKeyboardButton(
-        text='Удалить лот',
-        callback_data=enc_cb_data(cb_key, SellMenuOption.remove_lot.name))
     )
     return kb
 
@@ -64,6 +60,24 @@ def get_search_results_kb(lots: [LotData], page: int, cb_key: str, page_size: in
         result.add(b_prev)
     elif len(lots) > (page + 1) * page_size:
         result.add(b_next)
+    return result
+
+
+def get_remove_button(cb_key: str, lot_id: int) -> InlineKeyboardMarkup:
+    close = InlineKeyboardButton(
+        SpellHandler.get_message(Event.close_lot),
+        callback_data=enc_cb_data(cb_key, f'close_{lot_id}')
+    )
+    result = InlineKeyboardMarkup()
+    result.add(close)
+    return result
+
+
+def get_remove_confirm_kb(cb_key: str, lot_id: int) -> InlineKeyboardMarkup:
+    yes = InlineKeyboardButton('Принять', callback_data=enc_cb_data(cb_key, f'yes_{lot_id}'))
+    no = InlineKeyboardButton('Отмена', callback_data=enc_cb_data(cb_key, f'no_{lot_id}'))
+    result = InlineKeyboardMarkup()
+    result.row(yes, no)
     return result
 
 

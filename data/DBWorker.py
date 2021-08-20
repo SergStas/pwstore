@@ -182,12 +182,11 @@ class DBWorker:  # TODO: assertion error handling
         )
 
     @staticmethod
-    def close_lot(lot: LotData) -> bool:
+    def close_lot(lot_id: int) -> bool:
         try:
-            assert lot.lot_id is not None and lot.date_closed is None
-            return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot.lot_id}')
+            return execute_query(f'update lot set date_close = {time.time()} where lot_id = {lot_id}')
         except Exception as e:
-            Logger.error(f'Failed to close lot with id = {lot.lot_id}:\n\t\t\t{e}')
+            Logger.error(f'Failed to close lot #{lot_id}:\n\t\t\t{e}')
             return False
 
     @staticmethod
@@ -195,7 +194,7 @@ class DBWorker:  # TODO: assertion error handling
         return [converted for converted in [DBWorker.__lot_data_from_tuple(e) for e in
                                             execute_query_with_cursor(
                                                 f'select * from lot where user_id = {user_id} and '
-                                                f'date_close is not null'
+                                                f'date_close is null'
                                             )] if converted is not None]
 
     @staticmethod

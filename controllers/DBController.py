@@ -1,5 +1,3 @@
-from typing import Optional
-
 from data.DBWorker import DBWorker
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
@@ -65,10 +63,10 @@ class DBController:
         return result
 
     @staticmethod
-    def close_lot(lot: LotData) -> bool:
-        result = DBWorker.close_lot(lot)
+    def close_lot(lot_id: int) -> bool:
+        result = DBWorker.close_lot(lot_id)
         if not result:
-            Logger.error(f'Failed to close lot')
+            Logger.error(f'Failed to close lot #{lot_id}')
         return result
 
     @staticmethod

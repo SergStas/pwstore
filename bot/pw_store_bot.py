@@ -1,10 +1,10 @@
 from telebot.types import Message, CallbackQuery
 from bot.spell.SpellHandler import SpellHandler
 from bot.utils.bot_utils import init_bot, check_user_session
-from bot.validation.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, validate_doll, \
-    validate_price, validate_contacts
+from bot.validation.input_validation import validate_class, validate_lvl, validate_heaven, validate_description, \
+    validate_doll, validate_price, validate_contacts
 from bot.utils.ui_constr import get_race_select_kb, dec_cb_data, get_server_selector_kb, get_sell_menu_kb, \
-    get_search_results_kb
+    get_search_results_kb, get_remove_button, get_remove_confirm_kb
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
 from entity.enums.NewLotSessionParam import NewLotSessionParam
@@ -68,21 +68,46 @@ def callback_handler(call: CallbackQuery):
         'sell_menu': __sell_menu_cb,
         'new_lot_server': __new_lot_server_cb,
         'new_lot_race': __new_lot_race_cb,
-        'search_lot': __search_lot_cb_handler
+        'search_lot': __search_lot_cb,
+        'user_lots': __user_lots_cb,
+        'close': __close_lot_cb,
+        'close_conf': __close_conf_cb
     }
     key_dict[key](call, value)
 
 
-def __search_lot_cb_handler(call: CallbackQuery, value):
+def __close_lot_cb(call: CallbackQuery, value):
+    lot_id = int(value.split('_')[1])
+    __bot.delete_message(call.from_user.id, call.message.id)
+    __bot.send_message(
+        call.from_user.id,
+        SpellHandler.get_message(Event.close_lot_confirm),
+        reply_markup=get_remove_confirm_kb('close_conf', lot_id)
+    )
+
+
+def __close_conf_cb(call: CallbackQuery, value):
+    lot_id = int(value.split('_')[1])
+    option = value.split('_')[0]
+    __bot.delete_message(call.from_user.id, call.message.id)
+    if option == 'yes':
+        DBController.close_lot(lot_id)
+        __send(call.from_user.id, Event.close_lot_success)
+
+
+def __search_lot_cb(call: CallbackQuery, value, user_lots: bool = False):
     if 'page_' in value:
         __bot.delete_message(call.from_user.id, call.message.id)
         page = int(value.split('_')[1])
-        __proceed_lots_request(call.from_user.id, page)
+        if user_lots:
+            lots = DBController.get_user_lots(call.from_user.id)
+            __send_page_message(page, lots, call.from_user.id, 'search_lot')
+        else:
+            __proceed_lots_request(call.from_user.id, page)
         return
     lot_id = int(value)
     lot = DBController.get_lot(lot_id)
-    __send(
-        call.from_user.id,
+    text = SpellHandler.get_message(
         Event.lot_info_template,
         (
             lot.char.server,
@@ -96,8 +121,9 @@ def __search_lot_cb_handler(call: CallbackQuery, value):
             lot.contact_info,
             lot.date_opened,
             lot.char.description
-        )
-    )
+        ))
+    reply_markup = None if not user_lots else get_remove_button(f'close', lot.lot_id)
+    __bot.send_message(call.from_user.id, text, reply_markup=reply_markup)
 
 
 def __sell_menu_cb(call: CallbackQuery, value: str):
@@ -111,9 +137,14 @@ def __sell_menu_cb(call: CallbackQuery, value: str):
         )
     elif option == SellMenuOption.show_lots:
         user_lots = DBController.get_user_lots(call.from_user.id)
-        __send_page_message(0, user_lots, call.from_user.id, 'user_lots')  # FIXME
-    else:
-        pass  # TODO
+        if len(user_lots) == 0:
+            __send(call.from_user.id, Event.no_user_lots_found)
+        else:
+            __send_page_message(0, user_lots, call.from_user.id, 'user_lots')
+
+
+def __user_lots_cb(call: CallbackQuery, value: str):
+    __search_lot_cb(call, value, user_lots=True)
 
 
 def __new_lot_server_cb(call: CallbackQuery, value: str):

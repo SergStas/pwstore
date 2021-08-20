@@ -25,4 +25,8 @@ class Event(Enum):
     new_lot_fail = 20,
     lot_info_button_template = 21,
     show_lots_indices = 22,
-    lot_info_template = 23
+    lot_info_template = 23,
+    no_user_lots_found = 24,
+    close_lot = 25,
+    close_lot_confirm = 26,
+    close_lot_success = 27
