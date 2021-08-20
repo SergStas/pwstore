@@ -81,6 +81,14 @@ def get_remove_confirm_kb(cb_key: str, lot_id: int) -> InlineKeyboardMarkup:
     return result
 
 
+def get_main_menu_kb(cb_key: str) -> InlineKeyboardMarkup:
+    buy = InlineKeyboardButton('Купить персонажа', callback_data=enc_cb_data(cb_key, 'buy'))
+    sell = InlineKeyboardButton('Продать персонажа', callback_data=enc_cb_data(cb_key, 'sell'))
+    result = InlineKeyboardMarkup()
+    result.row(buy, sell)
+    return result
+
+
 def enc_cb_data(key: str, value: str) -> str:
     assert len(key.split('__')) == 1 and len(value.split('__')) == 1
     return f'{key}__{value}'

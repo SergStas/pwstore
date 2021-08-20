@@ -1,6 +1,7 @@
 from telebot.types import Message, CallbackQuery
 
 from bot.feature.close_lot_handlers import close_lot_cb, close_conf_cb
+from bot.feature.main_menu_handlers import show_buy_menu, main_menu_cb, show_sell_menu
 from bot.feature.new_lot_handlers import new_lot_race_cb, new_lot_server_cb
 from bot.feature.search_lot_handlers import search_server_cb, search_race_cb
 from bot.feature.search_results_handlers import all_lots_cb
@@ -9,7 +10,7 @@ from bot.feature.user_lot_handlers import user_lots_cb
 from bot.spell.SpellHandler import SpellHandler
 from bot.utils.bot_utils import init_bot, check_user_session
 from bot.utils.cb_utils import send
-from bot.utils.ui_constr import dec_cb_data, get_server_selector_kb, get_sell_menu_kb
+from bot.utils.ui_constr import dec_cb_data, get_main_menu_kb
 from entity.dataclass.UserData import UserData
 from entity.enums.Event import Event
 from logger.LogLevel import LogLevel
@@ -22,7 +23,11 @@ __bot = init_bot()
 @__bot.message_handler(commands=['start'])
 def handle_greeting(message: Message):
     __check_mes(message)
-    send(__bot, message.from_user.id, Event.first_launch)
+    __bot.send_message(
+        chat_id=message.from_user.id,
+        text=SpellHandler.get_message(Event.first_launch),
+        reply_markup=get_main_menu_kb('main_menu')
+    )
 
 
 @__bot.message_handler(commands=['help'])
@@ -34,21 +39,13 @@ def show_help(message: Message):
 @__bot.message_handler(commands=['sell'])
 def handle_sell_menu(message: Message):
     __check_mes(message)
-    __bot.send_message(
-        chat_id=message.from_user.id,
-        text=SpellHandler.get_message(Event.sell_menu),
-        reply_markup=get_sell_menu_kb('sell_menu')
-    )
+    show_sell_menu(__bot, message.from_user.id)
 
 
 @__bot.message_handler(commands=['buy'])
 def handle_buy_menu(message: Message):
     __check_mes(message)
-    __bot.send_message(
-        chat_id=message.from_user.id,
-        text=SpellHandler.get_message(Event.search_select_server),
-        reply_markup=get_server_selector_kb('search_server')
-    )
+    show_buy_menu(__bot, message.from_user.id)
 
 
 @__bot.message_handler(content_types=['text'])
@@ -69,7 +66,8 @@ def callback_handler(call: CallbackQuery):
         'show_lots': all_lots_cb,
         'user_lots': user_lots_cb,
         'close': close_lot_cb,
-        'close_conf': close_conf_cb
+        'close_conf': close_conf_cb,
+        'main_menu': main_menu_cb
     }
     key_dict[key](call, value, __bot)
 

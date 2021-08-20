@@ -6,9 +6,10 @@ class SpellHandler:
     __no_arg = {
         Event.first_launch:
             'Приветствую на самой честной и бесплтаной площадке по продаже персонажей в Perfect World!\n'
-            'Помни, что мы только предоставляем площадку по поиску и продаже аккаунтов. Мы не несем никакой '
+            'Помните, что мы только предоставляем площадку по поиску и продаже аккаунтов. Мы не несем никакой '
             'ответственности за персонажа и ситуации после его покупки или продажи\n\n'
-            'Введите /help чтобы получить справку',
+            'Для получения справки введите /help\n'
+            '',
         Event.help:
             'Введите одну из следующих команд:\n'
             '/help - помощь\n'
@@ -67,7 +68,8 @@ class SpellHandler:
     }
     __word_forms = {
         Event.filtered_lots_found:
-            'По вашему запросу найден{0} {1} лот{2} персонажей'
+            'По вашему запросу найден{0} {1} лот{2} персонажей\n\n'
+            'Показаны лоты с {3} по {4}, страница #{5}'
     }
     __templates = {
         Event.lot_info_button_template:
@@ -107,9 +109,9 @@ class SpellHandler:
             raise Exception(f'Spell event {event.name} requires args!')
         count = int(args[0])
         if event == Event.filtered_lots_found:
-            format_args = ('', args[0], '',) if count == 1 else \
-                ('о', args[0], 'а',) if 1 < count < 5 else \
-                ('о', args[0], 'ов',)
+            format_args = ('', args[0], '', args[1], args[2], args[3],) if count == 1 else \
+                ('о', args[0], 'а', args[1], args[2], args[3],) if 1 < count < 5 else \
+                ('о', args[0], 'ов', args[1], args[2], args[3],)
             return SpellHandler.__word_forms[event].format(*format_args)
 
     @staticmethod

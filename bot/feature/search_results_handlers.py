@@ -21,5 +21,4 @@ def __proceed_lots_request(bot: TeleBot, call: CallbackQuery, page: int):
     if event == Event.no_lots_found or event == Event.db_error:
         send(bot, call.from_user.id, event)
         return
-    send(bot, call.from_user.id, Event.filtered_lots_found, (len(lots),))
     send_default_page(bot, page, lots, call.from_user.id, 'show_lots')

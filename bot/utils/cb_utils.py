@@ -77,7 +77,7 @@ def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, ke
     end = min(len(lots), (page + 1) * size) - 1
     bot.send_message(
         chat_id=user_id,
-        text=SpellHandler.get_message(Event.show_lots_indices, (start, end, page,)),
+        text=SpellHandler.get_message(Event.filtered_lots_found, (len(lots), start, end, page,)),
         reply_markup=get_search_results_kb(lots, page, key, size)
     )
 
