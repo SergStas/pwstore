@@ -73,7 +73,7 @@ def lots_list_default_handler(bot: TeleBot, call: CallbackQuery, value, page_swi
             lot.date_opened,
             lot.char.description
         ))
-    bot.send_message(call.from_user.id, text, reply_markup=markup_factory(lot))
+    bot.send_message(call.from_user.id, text, reply_markup=markup_factory(lot) if markup_factory is not None else None)
 
 
 def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, key: str, size=5):
