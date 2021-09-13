@@ -15,6 +15,13 @@ from logger.Logger import Logger
 
 class DBWorker:  # TODO: assertion error handling
     @staticmethod
+    def save_message_id(chat_id: int, message_id: int):
+        result = execute_query(
+            f'insert into message_history values({message_id}, {chat_id}, false)'
+        )
+        return result
+
+    @staticmethod
     def get_lot(lot_id: int) -> Optional[LotData]:
         try:
             lot_data = execute_query_with_cursor(

@@ -47,11 +47,33 @@ def cleanup_db() -> bool:
 
 
 def drop_db() -> bool:
-    result = execute_query('drop table character') and \
-             execute_query('drop table user') and \
-             execute_query('drop table lot') and \
-             execute_query('drop table session') and \
-             execute_query('drop table search_session') and \
-             execute_query('drop table new_lot_session')
-    Logger.debug(f'DB has been dropped')
+    names = __get_names_of_all_tables()
+    result = True
+    for table in names:
+        success = execute_query(f'drop table {table}')
+        if success:
+            Logger.debug(f'Table {table} has been dropped')
+        else:
+            Logger.error(f'Failed to drop table {table}')
+        result &= success
+    # result = execute_query('drop table character') and \
+    #          execute_query('drop table user') and \
+    #          execute_query('drop table lot') and \
+    #          execute_query('drop table session') and \
+    #          execute_query('drop table search_session') and \
+    #          execute_query('drop table new_lot_session')
+    if result:
+        Logger.debug(f'DB has been dropped successfully')
+    else:
+        Logger.debug(f'DB wasn\'t dropped completely')
     return result
+
+
+def __get_names_of_all_tables() -> [str]:
+    with open('data/db_gen.sql') as file:
+        lines = file.read().split('\n')
+    names = [line.split('table ')[-1] for line in lines if len(line.split('create table')) > 1]
+    return names
+    # return [e[0] for e in execute_query_with_cursor(
+    #     'select name from sqlite_master where type = \'table\''
+    # )]
