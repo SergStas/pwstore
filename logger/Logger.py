@@ -11,6 +11,16 @@ class Logger:
     __size_limit = 1048576
 
     @staticmethod
+    def fork_log(log_level: LogLevel, cond: bool, text_true: str, text_false: str) -> None:
+        message = text_true if cond else text_false
+        if log_level == LogLevel.debug:
+            Logger.debug(message)
+        elif log_level == LogLevel.error:
+            Logger.error(message)
+        elif log_level == LogLevel.info:
+            Logger.info(message)
+
+    @staticmethod
     def error(message: str) -> None:
         Logger.__get_logger().error(message)
         if Logger.__console_level.value <= LogLevel.error.value:
