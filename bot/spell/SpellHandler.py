@@ -109,9 +109,9 @@ class SpellHandler:
             raise Exception(f'Spell event {event.name} requires args!')
         count = int(args[0])
         if event == Event.filtered_lots_found:
-            format_args = ('', args[0], '', args[1], args[2], args[3],) if count == 1 else \
-                ('о', args[0], 'а', args[1], args[2], args[3],) if 1 < count < 5 else \
-                ('о', args[0], 'ов', args[1], args[2], args[3],)
+            format_args = ('', args[0], '', args[1] + 1, args[2] + 1, args[3] + 1,) if count == 1 else \
+                ('о', args[0], 'а', args[1] + 1, args[2] + 1, args[3] + 1,) if 1 < count < 5 else \
+                ('о', args[0], 'ов', args[1] + 1, args[2] + 1, args[3] + 1,)
             return SpellHandler.__word_forms[event].format(*format_args)
 
     @staticmethod

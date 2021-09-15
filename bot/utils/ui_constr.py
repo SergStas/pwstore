@@ -55,8 +55,8 @@ def get_search_results_kb(lots: [LotData], page: int, cb_key: str, page_size: in
             ),
             callback_data=enc_cb_data(cb_key, str(lot.lot_id))
         ))
-    b_next = InlineKeyboardButton(text='>>', callback_data=enc_cb_data(cb_key, f'page_{page + 1}'))
-    b_prev = InlineKeyboardButton(text='<<', callback_data=enc_cb_data(cb_key, f'page_{page - 1}'))
+    b_next = InlineKeyboardButton(text=f'Страница #{page + 2}', callback_data=enc_cb_data(cb_key, f'page_{page + 1}'))
+    b_prev = InlineKeyboardButton(text=f'Страница #{page}', callback_data=enc_cb_data(cb_key, f'page_{page - 1}'))
     if page > 0 and len(lots) > (page + 1) * page_size:
         result.row(b_prev, b_next)
     elif page > 0:

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from data.DBWorker import DBWorker
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
@@ -11,6 +13,21 @@ from logger.Logger import Logger
 
 
 class DBController:
+    @staticmethod
+    def mark_message_as_deleted(message_id: int, chat_id: int) -> bool:
+        return DBWorker.remove_message(message_id, chat_id)
+
+    @staticmethod
+    def get_messages_to_delete(chat_id: int) -> [int]:
+        ids = DBWorker.get_ids_of_messages_to_delete(chat_id)
+        if ids is None:
+            return []
+        return ids
+
+    @staticmethod
+    def save_message(message_id: int, chat_id: int) -> bool:
+        return DBWorker.save_message_id(chat_id, message_id)
+
     @staticmethod
     def get_lot(lot_id: int) -> LotData:
         return DBWorker.get_lot(lot_id)

@@ -3,7 +3,7 @@ from typing import Optional
 from telebot import TeleBot
 from telebot.types import CallbackQuery, Message
 
-from bot.spell.SpellHandler import SpellHandler
+from bot.utils.bot_utils import check_message
 from bot.utils.cb_utils import default_cb_handler, send, default_input_validation_step
 from bot.utils.ui_constr import get_race_select_kb, get_return_kb
 from bot.validation.input_validation import validate_class, validate_lvl, validate_heaven, validate_doll, \
@@ -32,17 +32,19 @@ def new_lot_server_cb(call: CallbackQuery, value: str, bot: TeleBot):
 
 def new_lot_race_cb(call: CallbackQuery, value: str, bot: TeleBot):
     __set_bot(bot)
-    bot.delete_message(call.from_user.id, call.message.id)
     DBController.update_new_lot_session_params(call.from_user.id, NewLotSessionParam.race, Race[value])
-    bot.send_message(
+    send(
+        bot,
         call.from_user.id,
-        text=SpellHandler.get_message(Event.new_lot_input_class),
-        reply_markup=get_return_kb()
+        Event.new_lot_input_class,
+        None,
+        get_return_kb()
     )
     bot.register_next_step_handler(call.message, __new_lot_class_step)
 
 
 def __new_lot_class_step(message: Message):
+    check_message(__bot, message)
     default_input_validation_step(
         __bot,
         message=message,
@@ -57,6 +59,7 @@ def __new_lot_class_step(message: Message):
 
 
 def __new_lot_lvl_step(message: Message):
+    check_message(__bot, message)
     default_input_validation_step(
         __bot,
         message=message,
@@ -71,6 +74,7 @@ def __new_lot_lvl_step(message: Message):
 
 
 def __new_lot_heaven_step(message: Message):
+    check_message(__bot, message)
     default_input_validation_step(
         __bot,
         message=message,
@@ -85,6 +89,7 @@ def __new_lot_heaven_step(message: Message):
 
 
 def __new_lot_doll_step(message: Message):
+    check_message(__bot, message)
     default_input_validation_step(
         __bot,
         message=message,
@@ -99,6 +104,7 @@ def __new_lot_doll_step(message: Message):
 
 
 def __new_lot_description_step(message: Message):
+    check_message(__bot, message)
     default_input_validation_step(
         __bot,
         message=message,
@@ -113,6 +119,7 @@ def __new_lot_description_step(message: Message):
 
 
 def __new_lot_price_step(message: Message):
+    check_message(__bot, message)
     default_input_validation_step(
         __bot,
         message=message,
@@ -127,8 +134,15 @@ def __new_lot_price_step(message: Message):
 
 
 def __new_lot_contacts_step(message: Message):
+    check_message(__bot, message)
     if not validate_contacts(message.text.strip()):
-        send(__bot, message.from_user.id, Event.invalid_value, (message.text.strip(), 'контактов',))
+        send(
+            __bot,
+            message.from_user.id,
+            Event.invalid_value,
+            (message.text.strip(), 'контактов',),
+            get_return_kb()
+        )
         __bot.register_next_step_handler(message, __new_lot_contacts_step)
         return
     DBController.update_new_lot_session_params(
@@ -140,7 +154,9 @@ def __new_lot_contacts_step(message: Message):
     send(
         __bot,
         message.from_user.id,
-        Event.new_lot_success if add_result else Event.new_lot_fail
+        Event.new_lot_success if add_result else Event.new_lot_fail,
+        None,
+        markup=get_return_kb()
     )
 
 

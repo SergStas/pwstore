@@ -13,12 +13,12 @@ create table character
 
 create table message_history
 (
-    message_id int
-        constraint message_history_pk
-            primary key,
+    message_id int,
     chat_id    int not null,
     is_pinned  boolean default false not null,
-    is_deleted boolean default false not null
+    is_deleted boolean default false not null,
+    constraint message_history_pk
+        primary key (message_id, chat_id)
 );
 
 create table user

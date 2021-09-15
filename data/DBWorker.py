@@ -15,6 +15,16 @@ from logger.Logger import Logger
 
 class DBWorker:  # TODO: assertion error handling
     @staticmethod
+    def get_ids_of_messages_to_delete(chat_id: int) -> Optional[list]:
+        try:
+            return [e[0] for e in execute_query_with_cursor(
+                f'select message_id from message_history where chat_id = {chat_id} and not is_deleted and not is_pinned'
+            )]
+        except Exception as e:
+            Logger.error(f'Failed to get messages from chat #{chat_id}:\n\t\t\t{e}')
+            return None
+
+    @staticmethod
     def save_message_id(chat_id: int, message_id: int) -> bool:
         result = execute_query(
             f'insert into message_history values({message_id}, {chat_id}, false, false)'
@@ -27,12 +37,12 @@ class DBWorker:  # TODO: assertion error handling
         return result
 
     @staticmethod
-    def pin_message(message_id: int, flag: bool) -> bool:
-        if not DBWorker.__does_message_exist(message_id):
+    def pin_message(message_id: int, chat_id: int, flag: bool) -> bool:
+        if not DBWorker.__does_message_exist(message_id, chat_id):
             Logger.error(f'Failed to pin message #{message_id}: message not found')
             return False
         result = execute_query(
-            f'update message_history set is_pinned = {flag} where message_id = {message_id}'
+            f'update message_history set is_pinned = {flag} where message_id = {message_id} and chat_id = {chat_id}'
         )
         Logger.fork_log(
             result,
@@ -42,12 +52,12 @@ class DBWorker:  # TODO: assertion error handling
         return result
 
     @staticmethod
-    def remove_message(message_id: int) -> bool:
-        if not DBWorker.__does_message_exist(message_id):
+    def remove_message(message_id: int, chat_id: int) -> bool:
+        if not DBWorker.__does_message_exist(message_id, chat_id):
             Logger.error(f'Failed to remove message #{message_id}: message not found')
             return False
         result = execute_query(
-            f'update message_history set is_deleted = True where message_id = {message_id}'
+            f'update message_history set is_deleted = True where message_id = {message_id} and chat_id = {chat_id}'
         )
         Logger.fork_log(
             result,
@@ -126,8 +136,7 @@ class DBWorker:  # TODO: assertion error handling
             )
             return True
         except AssertionError:
-            Logger.error(f'Assertion error has occurred during updating search params for user'
-                         f'#{user_id}')
+            Logger.error(f'Assertion error has occurred during updating search params for user #{user_id}')
         except Exception as e:
             Logger.error(f'Failed to update search params for user #{user_id}:\n\t\t\t{e}')
             return False
@@ -145,8 +154,7 @@ class DBWorker:  # TODO: assertion error handling
             assert DBWorker.__new_nls(session_id)
             return True
         except Exception as e:
-            Logger.error(f'Assertion error has occurred during creating session for user'
-                         f'#{user.user_id}')
+            Logger.error(f'Assertion error has occurred during creating session for user #{user.user_id}')
             Logger.error(f'Failed to create session for user #{user.user_id}:\n\t\t\t{e}')
             return False
 
@@ -420,7 +428,7 @@ class DBWorker:  # TODO: assertion error handling
             return None
 
     @staticmethod
-    def __does_message_exist(message_id: int) -> bool:
+    def __does_message_exist(message_id: int, chat_id: int) -> bool:
         return len(execute_query_with_cursor(
-            f'select * from message_history where message_id = {message_id}'
+            f'select * from message_history where message_id = {message_id} and chat_id = {chat_id}'
         )) > 0

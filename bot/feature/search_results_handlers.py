@@ -2,6 +2,7 @@ from telebot import TeleBot
 from telebot.types import CallbackQuery
 
 from bot.utils.cb_utils import send_default_page, send, lots_list_default_handler
+from bot.utils.ui_constr import get_return_kb
 from controllers.DBController import DBController
 from entity.enums.Event import Event
 
@@ -12,13 +13,13 @@ def all_lots_cb(call: CallbackQuery, value, bot: TeleBot):
         call=call,
         value=value,
         page_switcher=__proceed_lots_request,
-        markup_factory=None
+        markup_factory=lambda _: get_return_kb()
     )
 
 
 def __proceed_lots_request(bot: TeleBot, call: CallbackQuery, page: int):
     lots, event = DBController.get_filtered_lots(call.from_user.id)
     if event == Event.no_lots_found or event == Event.db_error:
-        send(bot, call.from_user.id, event)
+        send(bot, call.from_user.id, event, None, get_return_kb())
         return
     send_default_page(bot, page, lots, call.from_user.id, 'show_lots')

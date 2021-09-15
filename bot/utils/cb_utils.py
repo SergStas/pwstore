@@ -6,6 +6,7 @@ from bot.utils.ui_constr import get_search_results_kb, get_return_kb
 from controllers.DBController import DBController
 from entity.dataclass.LotData import LotData
 from entity.enums.Event import Event
+from logger.Logger import Logger
 
 
 def default_cb_handler(
@@ -17,14 +18,13 @@ def default_cb_handler(
         reply_markup,
         spell_args=None
 ):
-    bot.delete_message(call.from_user.id, call.message.id)
     commit_func(call.from_user.id, value)
-    bot.send_message(
-        chat_id=call.from_user.id,
-        text=SpellHandler.get_message(spell_event) if spell_args is None else SpellHandler.get_message(
-            spell_event, *spell_args
-        ),
-        reply_markup=reply_markup
+    send(
+        bot,
+        call.from_user.id,
+        spell_event,
+        spell_args,
+        reply_markup
     )
 
 
@@ -39,52 +39,75 @@ def default_input_validation_step(
         handler_self_ref
 ):
     if not validation_func(message.text.strip()):
-        send(bot, message.from_user.id, Event.invalid_value, (message.text.strip(), error_msg_arg,))
+        send(bot, message.from_user.id, Event.invalid_value, (message.text.strip(), error_msg_arg,), get_return_kb())
         bot.register_next_step_handler(message, handler_self_ref)
         return
     commit_func(message.from_user.id, message.text.strip())
-    bot.send_message(
+    send(
+        bot,
         message.from_user.id,
-        SpellHandler.get_message(next_step),
-        reply_markup=get_return_kb()
+        next_step,
+        None,
+        get_return_kb()
     )
     bot.register_next_step_handler(message, next_step_handler)
 
 
 def lots_list_default_handler(bot: TeleBot, call: CallbackQuery, value, page_switcher, markup_factory):
     if 'page_' in value:
-        bot.delete_message(call.from_user.id, call.message.id)
         page = int(value.split('_')[1])
         page_switcher(bot, call, page)
         return
     lot = DBController.get_lot(int(value))
-    text = SpellHandler.get_message(
+    args = (
+        lot.char.server,
+        lot.char.race,
+        lot.char.lvl,
+        lot.char.char_class,
+        lot.char.heavens,
+        lot.char.doll,
+        lot.price,
+        lot.user.username,
+        lot.contact_info,
+        lot.date_opened,
+        lot.char.description
+    )
+    markup = markup_factory(lot) if markup_factory is not None else None
+    send(
+        bot,
+        call.from_user.id,
         Event.lot_info_template,
-        (
-            lot.char.server,
-            lot.char.race,
-            lot.char.lvl,
-            lot.char.char_class,
-            lot.char.heavens,
-            lot.char.doll,
-            lot.price,
-            lot.user.username,
-            lot.contact_info,
-            lot.date_opened,
-            lot.char.description
-        ))
-    bot.send_message(call.from_user.id, text, reply_markup=markup_factory(lot) if markup_factory is not None else None)
+        args,
+        markup
+    )
 
 
 def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, key: str, size=5):
     start = page * size
     end = min(len(lots), (page + 1) * size) - 1
-    bot.send_message(
-        chat_id=user_id,
-        text=SpellHandler.get_message(Event.filtered_lots_found, (len(lots), start, end, page,)),
-        reply_markup=get_search_results_kb(lots, page, key, size)
+    send(
+        bot,
+        user_id,
+        Event.filtered_lots_found,
+        (len(lots), start, end, page,),
+        get_search_results_kb(lots, page, key, size)
     )
 
 
-def send(bot, user_id: int, event: Event, args=None) -> None:
-    bot.send_message(user_id, SpellHandler.get_message(event, args))
+def send(bot: TeleBot, user_id: int, event: Event, args=None, markup=None) -> None:
+    message = bot.send_message(user_id, SpellHandler.get_message(event, args), reply_markup=markup)
+    cleanup_chat(bot, message.chat.id)
+    DBController.save_message(message.id, message.chat.id)
+
+
+def cleanup_chat(bot: TeleBot, chat_id: int) -> bool:
+    ids = DBController.get_messages_to_delete(chat_id)
+    result = True
+    for message_id in ids:
+        try:
+            bot.delete_message(chat_id, message_id)
+        except Exception as e:
+            Logger.error(f'Failed to delete message #{message_id} from chat #{chat_id}:\n\t\t\t{e}')
+            result = False
+        DBController.mark_message_as_deleted(message_id, chat_id)
+    return result
