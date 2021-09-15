@@ -39,33 +39,38 @@ def execute_query_with_cursor(query: str) -> list:
 
 
 def cleanup_db() -> bool:
-    result = execute_query('delete from user where true') and \
-           execute_query('delete from character where true') and \
-           execute_query('delete from lot where true')
-    Logger.debug(f'DB has been cleaned')
-    return result
+    names = __get_names_of_all_tables()
+    return __perform_operations_on_table(
+        names,
+        'delete from {0} where true',
+        '{0} has been cleaned successfully',
+        'Failed to clean {0}'
+    )
 
 
 def drop_db() -> bool:
     names = __get_names_of_all_tables()
+    return __perform_operations_on_table(
+        names,
+        'drop table {0}',
+        '{0} has been dropped successfully',
+        'Failed to drop {0}'
+    )
+
+
+def __perform_operations_on_table(tables: [str], query: str, success_mes: str, fail_mes: str) -> bool:
     result = True
-    for table in names:
-        success = execute_query(f'drop table {table}')
+    for table in tables:
+        success = execute_query(query.format((table,)))
         if success:
-            Logger.debug(f'Table {table} has been dropped')
+            Logger.debug(success_mes.format((table,)))
         else:
-            Logger.error(f'Failed to drop table {table}')
+            Logger.error(fail_mes.format((table,)))
         result &= success
-    # result = execute_query('drop table character') and \
-    #          execute_query('drop table user') and \
-    #          execute_query('drop table lot') and \
-    #          execute_query('drop table session') and \
-    #          execute_query('drop table search_session') and \
-    #          execute_query('drop table new_lot_session')
     if result:
-        Logger.debug(f'DB has been dropped successfully')
+        Logger.debug(success_mes.format(('all the tables',)))
     else:
-        Logger.debug(f'DB wasn\'t dropped completely')
+        Logger.debug(fail_mes.format(('all the tables',)))
     return result
 
 
@@ -74,6 +79,3 @@ def __get_names_of_all_tables() -> [str]:
         lines = file.read().split('\n')
     names = [line.split('table ')[-1] for line in lines if len(line.split('create table')) > 1]
     return names
-    # return [e[0] for e in execute_query_with_cursor(
-    #     'select name from sqlite_master where type = \'table\''
-    # )]

@@ -17,7 +17,8 @@ create table message_history
         constraint message_history_pk
             primary key,
     chat_id    int not null,
-    is_pinned  boolean default false not null
+    is_pinned  boolean default false not null,
+    is_deleted boolean default false not null
 );
 
 create table user

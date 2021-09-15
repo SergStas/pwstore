@@ -15,11 +15,46 @@ from logger.Logger import Logger
 
 class DBWorker:  # TODO: assertion error handling
     @staticmethod
-    def save_message_id(chat_id: int, message_id: int):
+    def save_message_id(chat_id: int, message_id: int) -> bool:
         result = execute_query(
-            f'insert into message_history values({message_id}, {chat_id}, false)'
+            f'insert into message_history values({message_id}, {chat_id}, false, false)'
+        )
+        Logger.fork_log(
+            result,
+            f'Message #{message_id} saved successfully',
+            f'An error has occurred during saving message #{message_id}'
         )
         return result
+
+    @staticmethod
+    def pin_message(message_id: int, flag: bool) -> bool:
+        if not DBWorker.__does_message_exist(message_id):
+            Logger.error(f'Failed to pin message #{message_id}: message not found')
+            return False
+        result = execute_query(
+            f'update message_history set is_pinned = {flag} where message_id = {message_id}'
+        )
+        Logger.fork_log(
+            result,
+            f'Message #{message_id} pinned {"on" if flag else "off"} successfully',
+            f'Failed to pin {"on" if flag else "off"} message #{message_id}'
+        )
+        return result
+
+    @staticmethod
+    def remove_message(message_id: int) -> bool:
+        if not DBWorker.__does_message_exist(message_id):
+            Logger.error(f'Failed to remove message #{message_id}: message not found')
+            return False
+        result = execute_query(
+            f'update message_history set is_deleted = True where message_id = {message_id}'
+        )
+        Logger.fork_log(
+            result,
+            f'Message #{message_id} marked as deleted successfully',
+            f'Failed to mark message #{message_id} as deleted'
+        )
+        return True
 
     @staticmethod
     def get_lot(lot_id: int) -> Optional[LotData]:
@@ -383,3 +418,9 @@ class DBWorker:  # TODO: assertion error handling
         except Exception as e:
             Logger.error(f'{error_message}:\n\t\t\t{e}')
             return None
+
+    @staticmethod
+    def __does_message_exist(message_id: int) -> bool:
+        return len(execute_query_with_cursor(
+            f'select * from message_history where message_id = {message_id}'
+        )) > 0
