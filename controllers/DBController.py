@@ -1,9 +1,7 @@
-from typing import Optional
-
 from data.DBWorker import DBWorker
+from entity.dataclass.CharData import CharData
 from entity.dataclass.LotData import LotData
 from entity.dataclass.UserData import UserData
-from entity.dataclass.CharData import CharData
 from entity.enums.Event import Event
 from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
@@ -13,6 +11,18 @@ from logger.Logger import Logger
 
 
 class DBController:
+    @staticmethod
+    def remove_from_favs(user_id: int, lot_id: int):
+        DBWorker.remove_from_favs(user_id, lot_id)
+
+    @staticmethod
+    def get_favs(user_id: int) -> [LotData]:
+        return DBWorker.get_favs(user_id)
+
+    @staticmethod
+    def add_to_favs(user_id: int, lot_id: int):
+        DBWorker.add_to_favs(user_id, lot_id)
+
     @staticmethod
     def mark_message_as_deleted(message_id: int, chat_id: int) -> bool:
         return DBWorker.remove_message(message_id, chat_id)
@@ -94,3 +104,7 @@ class DBController:
     @staticmethod
     def get_user_lots(user_id: int) -> [LotData]:
         return DBWorker.get_user_lots(user_id)
+
+    @staticmethod
+    def is_fav(lot_id: int, user_id: int) -> bool:
+        return DBWorker.is_fav(lot_id=lot_id, user_id=user_id)

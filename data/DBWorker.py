@@ -15,6 +15,42 @@ from logger.Logger import Logger
 
 class DBWorker:  # TODO: assertion error handling
     @staticmethod
+    def is_fav(lot_id: int, user_id: int):
+        lots = [e.lot_id for e in DBWorker.get_favs(user_id)]
+        return lot_id in lots
+
+    @staticmethod
+    def remove_from_favs(user_id: int, lot_id: int):
+        execute_query(f'delete from favs where lot_id = {lot_id} and user_id = {user_id}')
+
+    @staticmethod
+    def get_favs(user_id: int) -> [LotData]:
+        return [converted for converted in
+                [DBWorker.__lot_data_from_tuple(execute_query_with_cursor(
+                     f'select * from lot where lot_id = {e[2]}'
+                 )[0]) for e in
+                 execute_query_with_cursor(
+                     f'select * from favs where user_id = {user_id}'
+                 )
+                 ] if converted is not None
+                ]
+
+    @staticmethod
+    def add_to_favs(user_id: int, lot_id: int):
+        if DBWorker.is_fav(lot_id, user_id):
+            return
+        if user_id is not None and \
+                user_id in [e[0] for e in execute_query_with_cursor('select user_id from user')] and \
+                lot_id is not None and \
+                lot_id in [e[0] for e in execute_query_with_cursor('select * from lot')]:
+            execute_query(
+                f'insert into favs values ('
+                f'null,'
+                f'{user_id}, '
+                f'{lot_id})'
+            )
+
+    @staticmethod
     def get_ids_of_messages_to_delete(chat_id: int) -> Optional[list]:
         try:
             return [e[0] for e in execute_query_with_cursor(

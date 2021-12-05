@@ -2,6 +2,7 @@ from telebot import TeleBot
 from telebot.types import Message, CallbackQuery
 
 from bot.feature.close_lot_handlers import close_lot_cb, close_conf_cb
+from bot.feature.favs_cb import favs_cb
 from bot.feature.main_menu_handlers import show_buy_menu, main_menu_cb, show_sell_menu
 from bot.feature.new_lot_handlers import new_lot_race_cb, new_lot_server_cb
 from bot.feature.search_lot_handlers import search_server_cb, search_race_cb
@@ -51,6 +52,7 @@ def handle_other(message: Message):
 @__bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call: CallbackQuery):
     key, value = dec_cb_data(call.data)
+    Logger.debug(call.data)
     key_dict = {
         'search_server': search_server_cb,
         'search_race': search_race_cb,
@@ -62,7 +64,8 @@ def callback_handler(call: CallbackQuery):
         'close': close_lot_cb,
         'close_conf': close_conf_cb,
         'main_menu': main_menu_cb,
-        'back_to_mm': __handle_back_to_mm
+        'back_to_mm': __handle_back_to_mm,
+        'favs': favs_cb
     }
     key_dict[key](call, value, __bot)
 
@@ -72,12 +75,14 @@ def __handle_back_to_mm(call: CallbackQuery, value: str, bot: TeleBot):
     send_greeting(__bot, call.from_user.id)
 
 
-def start_bot():
+def start_bot(loop_forever: bool):
     Logger.debug('Bot polling has started')
-    while True:
-        try:
-            __bot.polling(none_stop=True)
-        except Exception as e:
-            Logger.error(
-                f'FATAL ERROR:\n\t\t\t{e}'
-            )
+    if loop_forever:
+        while True:
+            try:
+                __bot.polling(none_stop=True)
+            except Exception as e:
+                Logger.error(
+                    f'FATAL ERROR:\n\t\t\t{e}'
+                )
+    else: __bot.polling(none_stop=True)

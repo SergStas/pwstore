@@ -61,11 +61,11 @@ def drop_db() -> bool:
 def __perform_operations_on_table(tables: [str], query: str, success_mes: str, fail_mes: str) -> bool:
     result = True
     for table in tables:
-        success = execute_query(query.format((table,)))
+        success = execute_query(query.format(table))
         if success:
-            Logger.debug(success_mes.format((table,)))
+            Logger.debug(success_mes.format(table))
         else:
-            Logger.error(fail_mes.format((table,)))
+            Logger.error(fail_mes.format(table))
         result &= success
     if result:
         Logger.debug(success_mes.format(('all the tables',)))

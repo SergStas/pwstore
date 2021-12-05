@@ -96,3 +96,12 @@ create table user_actions
         references user_event
 );
 
+create table favs
+(
+    fav_id      int
+        constraint favs_pk primary key,
+    user_id     int
+        references user,
+    lot_id      int     not null
+        references lot
+)

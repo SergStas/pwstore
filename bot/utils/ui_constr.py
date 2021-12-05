@@ -78,6 +78,16 @@ def get_remove_button(cb_key: str, lot_id: int) -> InlineKeyboardMarkup:
     return result
 
 
+def get_remove_from_favs_button(lot_id: int, user_id: int, cb_key: str = 'favs') -> InlineKeyboardMarkup:
+    remove = InlineKeyboardButton(
+        'Удалить из избранного',
+        callback_data=enc_cb_data(cb_key, f'remove_{user_id}_{lot_id}')
+    )
+    result = InlineKeyboardMarkup()
+    result.add(remove)
+    return result
+
+
 def get_remove_confirm_kb(cb_key: str, lot_id: int) -> InlineKeyboardMarkup:
     yes = InlineKeyboardButton('Принять', callback_data=enc_cb_data(cb_key, f'yes_{lot_id}'))
     no = InlineKeyboardButton('Отмена', callback_data=enc_cb_data(cb_key, f'no_{lot_id}'))
@@ -89,8 +99,10 @@ def get_remove_confirm_kb(cb_key: str, lot_id: int) -> InlineKeyboardMarkup:
 def get_main_menu_kb(cb_key: str) -> InlineKeyboardMarkup:
     buy = InlineKeyboardButton('Купить персонажа', callback_data=enc_cb_data(cb_key, 'buy'))
     sell = InlineKeyboardButton('Продать персонажа', callback_data=enc_cb_data(cb_key, 'sell'))
+    favs = InlineKeyboardButton('Избранное', callback_data=enc_cb_data('favs', 'page_0'))
     result = InlineKeyboardMarkup()
-    result.row(buy, sell)
+    result.add(buy)
+    result.row(sell, favs)
     return result
 
 
@@ -101,6 +113,24 @@ def get_return_button(cb_key: str = 'back_to_mm') -> InlineKeyboardButton:
 def get_return_kb(cb_key: str = 'back_to_mm') -> InlineKeyboardMarkup:
     result = InlineKeyboardMarkup()
     result.add(get_return_button(cb_key))
+    return result
+
+
+def get_all_lots_markup_kb(cb_key: str, lot: LotData, is_fav: bool, page: int) -> InlineKeyboardMarkup:
+    result = InlineKeyboardMarkup()
+    if is_fav:
+        favs = InlineKeyboardButton(
+            "Удалить из избранного",
+            callback_data=enc_cb_data('favs', f'remove_{lot.lot_id}'),
+        )
+    else:
+        favs = InlineKeyboardButton(
+            "Добавить в избранное", callback_data=enc_cb_data('favs', f'add_{lot.lot_id}')
+        )
+    back = InlineKeyboardButton('Назад', callback_data=enc_cb_data(cb_key, f'page_{page}'))
+    return_button = get_return_button()
+    result.row(favs, back)
+    result.add(return_button)
     return result
 
 
