@@ -1,7 +1,7 @@
 from telebot import TeleBot
 from telebot.types import CallbackQuery
 
-from bot.feature.favs_cb import favs_cb
+from bot.feature.favs.favs_cb import favs_cb
 from bot.utils.cb_utils import send
 from bot.utils.ui_constr import get_server_selector_kb, get_sell_menu_kb
 from entity.enums.Event import Event

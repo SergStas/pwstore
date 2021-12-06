@@ -59,7 +59,19 @@ def lots_list_default_handler(bot: TeleBot, call: CallbackQuery, value, page_swi
         page_switcher(bot, call, page)
         return
     lot = DBController.get_lot(int(value))
-    args = (
+    args = get_lot_info_args(lot)
+    markup = markup_factory(lot) if markup_factory is not None else None
+    send(
+        bot,
+        call.from_user.id,
+        Event.lot_info_template,
+        args,
+        markup
+    )
+
+
+def get_lot_info_args(lot: LotData):
+    return (
         lot.char.server,
         lot.char.race,
         lot.char.lvl,
@@ -72,17 +84,9 @@ def lots_list_default_handler(bot: TeleBot, call: CallbackQuery, value, page_swi
         lot.date_opened,
         lot.char.description
     )
-    markup = markup_factory(lot) if markup_factory is not None else None
-    send(
-        bot,
-        call.from_user.id,
-        Event.lot_info_template,
-        args,
-        markup
-    )
 
 
-def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, key: str, size=5):
+def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, key: str, size=5, value_prefix: str = ''):
     start = page * size
     end = min(len(lots), (page + 1) * size) - 1
     send(
@@ -90,7 +94,7 @@ def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, ke
         user_id,
         Event.filtered_lots_found,
         (len(lots), start, end, page,),
-        get_search_results_kb(lots, page, key, size)
+        get_search_results_kb(lots, page, key, size, value_prefix),
     )
 
 

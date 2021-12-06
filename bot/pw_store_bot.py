@@ -2,22 +2,26 @@ from telebot import TeleBot
 from telebot.types import Message, CallbackQuery
 
 from bot.feature.close_lot_handlers import close_lot_cb, close_conf_cb
-from bot.feature.favs_cb import favs_cb
+from bot.feature.favs.favs_cb import favs_cb
 from bot.feature.main_menu_handlers import show_buy_menu, main_menu_cb, show_sell_menu
 from bot.feature.new_lot_handlers import new_lot_race_cb, new_lot_server_cb
 from bot.feature.search_lot_handlers import search_server_cb, search_race_cb
 from bot.feature.search_results_handlers import all_lots_cb
 from bot.feature.sell_menu_handlers import sell_menu_cb
+from bot.feature.sellerlots.SellerLotsCallback import *
 from bot.feature.user_lot_handlers import user_lots_cb
+from bot.utils.CallbackKeyEncoder import CallbackKeyEncoder
 from bot.utils.bot_utils import init_bot, check_message, greeting, send_greeting
 from bot.utils.cb_utils import send
-from bot.utils.ui_constr import dec_cb_data, get_return_kb
+from bot.utils.ui_constr import get_return_kb
 from entity.enums.Event import Event
 from logger.LogLevel import LogLevel
 from logger.Logger import Logger
 
 Logger.set_console_log_level(LogLevel.debug)
 __bot = init_bot()
+
+prev_command: str
 
 
 @__bot.message_handler(commands=['start'])
@@ -51,8 +55,12 @@ def handle_other(message: Message):
 
 @__bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call: CallbackQuery):
-    key, value = dec_cb_data(call.data)
-    Logger.debug(call.data)
+    global prev_command
+    key, value = CallbackKeyEncoder.dec_cb_data(call.data)
+    f_key = key
+    if key == 'void':
+        key, value = CallbackKeyEncoder.decode_void(call.data)
+    Logger.debug('                                   ' + call.data.upper())
     key_dict = {
         'search_server': search_server_cb,
         'search_race': search_race_cb,
@@ -65,9 +73,16 @@ def callback_handler(call: CallbackQuery):
         'close_conf': close_conf_cb,
         'main_menu': main_menu_cb,
         'back_to_mm': __handle_back_to_mm,
-        'favs': favs_cb
+        'favs': favs_cb,
+        'seller_lots': SellerLotsCallback.execute,
     }
     key_dict[key](call, value, __bot)
+    if f_key == 'void':
+        Logger.debug('                                   PREV:' + prev_command.upper())
+        prev_key, prev_value = CallbackKeyEncoder.dec_cb_data(prev_command)
+        key_dict[prev_key](call, prev_value, __bot)
+    else:
+        prev_command = call.data
 
 
 def __handle_back_to_mm(call: CallbackQuery, value: str, bot: TeleBot):

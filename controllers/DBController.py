@@ -12,6 +12,10 @@ from logger.Logger import Logger
 
 class DBController:
     @staticmethod
+    def get_sellers_lots(seller_id: int):
+        return DBWorker.get_user_lots(seller_id)
+
+    @staticmethod
     def remove_from_favs(user_id: int, lot_id: int):
         DBWorker.remove_from_favs(user_id, lot_id)
 
