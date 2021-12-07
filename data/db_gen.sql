@@ -104,4 +104,15 @@ create table favs
         references user,
     lot_id      int     not null
         references lot
-)
+);
+
+create table lot_visits
+(
+    lv_id       int
+        constraint lot_visits_pk primary key,
+    lot_id      int     not null
+        references lot,
+    date        timestamp   not null,
+    visitor_id  int     not null
+        references user
+);

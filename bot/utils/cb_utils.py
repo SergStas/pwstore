@@ -61,6 +61,7 @@ def lots_list_default_handler(bot: TeleBot, call: CallbackQuery, value, page_swi
     lot = DBController.get_lot(int(value))
     args = get_lot_info_args(lot)
     markup = markup_factory(lot) if markup_factory is not None else None
+    DBController.add_lot_visit(lot_id=lot.lot_id, user_id=call.from_user.id)
     send(
         bot,
         call.from_user.id,

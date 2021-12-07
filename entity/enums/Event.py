@@ -29,4 +29,6 @@ class Event(Enum):
     no_user_lots_found = 24,
     close_lot = 25,
     close_lot_confirm = 26,
-    close_lot_success = 27
+    close_lot_success = 27,
+    select_date = 28,
+    lots_visit_data = 29,

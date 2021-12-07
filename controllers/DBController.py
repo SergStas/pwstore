@@ -1,6 +1,9 @@
+import datetime
+
 from data.DBWorker import DBWorker
 from entity.dataclass.CharData import CharData
 from entity.dataclass.LotData import LotData
+from entity.dataclass.LotVisitSummary import LotVisitSummary
 from entity.dataclass.UserData import UserData
 from entity.enums.Event import Event
 from entity.enums.NewLotSessionParam import NewLotSessionParam
@@ -11,6 +14,25 @@ from logger.Logger import Logger
 
 
 class DBController:
+    @staticmethod
+    def get_visits_summary(user_id: int, date_from: datetime.date) -> [LotVisitSummary]:
+        lots = DBWorker.get_user_lots(user_id)
+        all_data = [
+            LotVisitSummary(
+                lot=lot,
+                date_from=date_from,
+                visits_count=len([
+                    e for e in DBWorker.get_visit_data_of_lot(lot.lot_id)
+                    if e.visit_date >= date_from
+                ])
+            ) for lot in lots
+         ]
+        return all_data
+
+    @staticmethod
+    def add_lot_visit(lot_id: int, user_id: int):
+        DBWorker.add_visit_event(lot_id, user_id)
+
     @staticmethod
     def get_sellers_lots(seller_id: int):
         return DBWorker.get_user_lots(seller_id)

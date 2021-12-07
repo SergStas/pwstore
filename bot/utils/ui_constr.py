@@ -20,6 +20,10 @@ def get_sell_menu_kb(cb_key: str) -> InlineKeyboardMarkup:
         text='Управление активными лотами',
         callback_data=CallbackKeyEncoder.enc_cb_data(cb_key, SellMenuOption.show_lots.name))
     )
+    kb.add(InlineKeyboardButton(
+        text='Статистика просмотра ваших лотов',
+        callback_data=CallbackKeyEncoder.enc_cb_data('lot_visit', 'date'),
+    ))
     kb.add(get_return_button())
     return kb
 

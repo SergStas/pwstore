@@ -5,6 +5,7 @@ from bot.feature.close_lot_handlers import close_lot_cb, close_conf_cb
 from bot.feature.favs.favs_cb import favs_cb
 from bot.feature.main_menu_handlers import show_buy_menu, main_menu_cb, show_sell_menu
 from bot.feature.new_lot_handlers import new_lot_race_cb, new_lot_server_cb
+from bot.feature.lotvisit.LotVisitCallback import LotVisitCallback
 from bot.feature.search_lot_handlers import search_server_cb, search_race_cb
 from bot.feature.search_results_handlers import all_lots_cb
 from bot.feature.sell_menu_handlers import sell_menu_cb
@@ -60,7 +61,7 @@ def callback_handler(call: CallbackQuery):
     f_key = key
     if key == 'void':
         key, value = CallbackKeyEncoder.decode_void(call.data)
-    Logger.debug('                                   ' + call.data.upper())
+    Logger.info(call.data.upper())
     key_dict = {
         'search_server': search_server_cb,
         'search_race': search_race_cb,
@@ -75,10 +76,11 @@ def callback_handler(call: CallbackQuery):
         'back_to_mm': __handle_back_to_mm,
         'favs': favs_cb,
         'seller_lots': SellerLotsCallback.execute,
+        'lot_visit': LotVisitCallback.execute,
     }
     key_dict[key](call, value, __bot)
     if f_key == 'void':
-        Logger.debug('                                   PREV:' + prev_command.upper())
+        Logger.info('PREV:' + prev_command.upper())
         prev_key, prev_value = CallbackKeyEncoder.dec_cb_data(prev_command)
         key_dict[prev_key](call, prev_value, __bot)
     else:

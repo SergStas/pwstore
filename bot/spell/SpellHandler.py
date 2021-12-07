@@ -56,7 +56,9 @@ class SpellHandler:
         Event.close_lot_confirm:
             'Вы уверены, что хотите закрыть лот персонажа? Это действие нельзя будет отменить',
         Event.close_lot_success:
-            'Лот персонажа закрыт успешно'
+            'Лот персонажа закрыт успешно',
+        Event.select_date:
+            'Укажите временной период:'
     }
     __with_args = {
         Event.unknown_command:
@@ -64,7 +66,9 @@ class SpellHandler:
         Event.invalid_value:
             'Значение \'{0}\' некорректно для {1}, попробуйте еще раз',
         Event.show_lots_indices:
-            'Показаны лоты с {0} по {1}, страница #{2}'
+            'Показаны лоты с {0} по {1}, страница #{2}',
+        Event.lots_visit_data:
+            'Показана иниформация о просмотрах с {0}:\n\n{1}',
     }
     __word_forms = {
         Event.filtered_lots_found:

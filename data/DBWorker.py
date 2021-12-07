@@ -5,6 +5,7 @@ from typing import Optional
 from data.db_utils import execute_query, execute_query_with_cursor
 from entity.dataclass.CharData import CharData
 from entity.dataclass.LotData import LotData
+from entity.dataclass.LotVisitData import LotVisitData
 from entity.dataclass.UserData import UserData
 from entity.enums.NewLotSessionParam import NewLotSessionParam
 from entity.enums.Race import Race
@@ -14,6 +15,27 @@ from logger.Logger import Logger
 
 
 class DBWorker:  # TODO: assertion error handling
+    @staticmethod
+    def get_visit_data_of_lot(lot_id: int) -> [LotVisitData]:
+        return [DBWorker.__lot_visit_data_from_tuple(e)
+                for e in execute_query_with_cursor(
+                    f'select * from lot_visits where lot_id = {lot_id}'
+                )]
+
+    @staticmethod
+    def add_visit_event(lot_id: int, visitor_id: int):
+        if visitor_id is not None and \
+                visitor_id in [e[0] for e in execute_query_with_cursor('select user_id from user')] and \
+                lot_id is not None and \
+                lot_id in [e[0] for e in execute_query_with_cursor('select * from lot')]:
+            execute_query(
+                f'insert into lot_visits values ('
+                f'null,'
+                f'{lot_id}, '
+                f'{time.time()},'
+                f'{visitor_id})'
+            )
+
     @staticmethod
     def is_fav(lot_id: int, user_id: int):
         lots = [e.lot_id for e in DBWorker.get_favs(user_id)]
@@ -27,8 +49,8 @@ class DBWorker:  # TODO: assertion error handling
     def get_favs(user_id: int) -> [LotData]:
         return [converted for converted in
                 [DBWorker.__lot_data_from_tuple(execute_query_with_cursor(
-                     f'select * from lot where lot_id = {e[2]}'
-                 )[0]) for e in
+                    f'select * from lot where lot_id = {e[2]}'
+                )[0]) for e in
                  execute_query_with_cursor(
                      f'select * from favs where user_id = {user_id}'
                  )
@@ -468,3 +490,8 @@ class DBWorker:  # TODO: assertion error handling
         return len(execute_query_with_cursor(
             f'select * from message_history where message_id = {message_id} and chat_id = {chat_id}'
         )) > 0
+
+    @staticmethod
+    def __lot_visit_data_from_tuple(data):
+        lot = DBWorker.get_lot(data[1])
+        return LotVisitData(lot=lot, visit_date=datetime.date.fromtimestamp(data[2]))

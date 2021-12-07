@@ -42,6 +42,7 @@ class SellerLotsCallback:
             call=call,
             seller_id=int(value.split('_')[0])
         )
+        DBController.add_lot_visit(lot_id=lot.lot_id, user_id=call.from_user.id)
         send(
             bot=bot,
             user_id=call.from_user.id,
