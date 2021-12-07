@@ -82,10 +82,21 @@ def get_search_results_kb(
         result.add(b_prev)
     elif len(lots) > (page + 1) * page_size:
         result.add(b_next)
-    result.add(InlineKeyboardButton(
+    result.add(get_filter_button())
+    result.add(get_return_button())
+    return result
+
+
+def get_filter_button() -> InlineKeyboardButton:
+    return InlineKeyboardButton(
         text='Фильтрация...',
         callback_data=CallbackKeyEncoder.enc_cb_data(FilterKey.filter.name, FilterKey.open.name),
-    ))
+    )
+
+
+def get_no_lots_kb() -> InlineKeyboardMarkup:
+    result = InlineKeyboardMarkup()
+    result.add(get_filter_button())
     result.add(get_return_button())
     return result
 

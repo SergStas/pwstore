@@ -87,13 +87,22 @@ def get_lot_info_args(lot: LotData):
     )
 
 
-def send_default_page(bot: TeleBot, page: int, lots: [LotData], user_id: int, key: str, size=5, value_prefix: str = ''):
+def send_default_page(
+        bot: TeleBot,
+        page: int,
+        lots: [LotData],
+        user_id: int,
+        key: str,
+        size=5,
+        value_prefix: str = '',
+        title_event: Event = Event.filtered_lots_found,
+):
     start = page * size
     end = min(len(lots), (page + 1) * size) - 1
     send(
         bot,
         user_id,
-        Event.filtered_lots_found,
+        title_event,
         (len(lots), start, end, page,),
         get_search_results_kb(lots, page, key, size, value_prefix),
     )

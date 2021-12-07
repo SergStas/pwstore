@@ -31,7 +31,8 @@ class SellerLotsCallback:
             lots=DBController.get_sellers_lots(seller_id=seller_id),
             user_id=call.from_user.id,
             key='seller_lots',
-            value_prefix=f'{seller_id}_'
+            value_prefix=f'{seller_id}_',
+            title_event=Event.seller_lots,
         )
 
     @staticmethod

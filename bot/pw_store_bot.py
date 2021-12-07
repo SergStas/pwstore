@@ -14,7 +14,7 @@ from bot.feature.sell_menu_handlers import sell_menu_cb
 from bot.feature.sellerlots.SellerLotsCallback import *
 from bot.feature.user_lot_handlers import user_lots_cb
 from bot.utils.CallbackKeyEncoder import CallbackKeyEncoder
-from bot.utils.bot_utils import init_bot, check_message, greeting, send_greeting
+from bot.utils.bot_utils import init_bot, check_message, greeting, send_greeting, check_user_session, userdata_from_user
 from bot.utils.cb_utils import send
 from bot.utils.ui_constr import get_return_kb
 from entity.enums.Event import Event
@@ -59,6 +59,7 @@ def handle_other(message: Message):
 @__bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call: CallbackQuery):
     global prev_command
+    check_user_session(userdata_from_user(call.from_user))
     key, value = CallbackKeyEncoder.dec_cb_data(call.data)
     f_key = key
     if key == 'void':
@@ -105,4 +106,5 @@ def start_bot(loop_forever: bool):
                 Logger.error(
                     f'FATAL ERROR:\n\t\t\t{e}'
                 )
-    else: __bot.polling(none_stop=True)
+    else:
+        __bot.polling(none_stop=True)

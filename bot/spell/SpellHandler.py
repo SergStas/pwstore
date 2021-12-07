@@ -69,6 +69,8 @@ class SpellHandler:
             'Укажите минимальную цену:',
         Event.input_max_price:
             'Укажите максимальную цену:',
+        Event.no_favs:
+            'У вас пока нет избранных лотов',
     }
     __with_args = {
         Event.unknown_command:
@@ -79,6 +81,13 @@ class SpellHandler:
             'Показаны лоты с {0} по {1}, страница #{2}',
         Event.lots_visit_data:
             'Показана иниформация о просмотрах с {0}:\n\n{1}',
+        Event.found_favs:
+            'У вас {0} избранных лотов\n\n'
+            'Показаны лоты с {1} по {2}, страница #{3}',
+        Event.seller_lots:
+            'Данный пользователь выставил на продажу {0} лотов\n\n'
+            'Показаны лоты с {1} по {2}, страница #{3}',
+
     }
     __word_forms = {
         Event.filtered_lots_found:

@@ -77,7 +77,7 @@ class FilterMarkupFactory:
     @staticmethod
     def __get_back_button() -> InlineKeyboardButton:
         return InlineKeyboardButton(
-            text='Назад',
+            text='Применить',
             callback_data=CallbackKeyEncoder.enc_cb_data(FilterKey.filter.name, FilterKey.close.name)
         )
 

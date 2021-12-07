@@ -37,3 +37,6 @@ class Event(Enum):
     input_max_lvl = 32,
     input_min_price = 33,
     input_max_price = 34,
+    found_favs = 35,
+    no_favs = 36,
+    seller_lots = 37,
