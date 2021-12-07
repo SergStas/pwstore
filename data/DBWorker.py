@@ -2,6 +2,7 @@ import datetime
 import time
 from typing import Optional
 
+from bot.feature.filter.FilterParams import FilterParams
 from data.db_utils import execute_query, execute_query_with_cursor
 from entity.dataclass.CharData import CharData
 from entity.dataclass.LotData import LotData
@@ -15,6 +16,15 @@ from logger.Logger import Logger
 
 
 class DBWorker:  # TODO: assertion error handling
+    @staticmethod
+    def get_filter_params(user_id: int) -> FilterParams:
+        if user_id is not None and \
+                user_id in [e[0] for e in execute_query_with_cursor('select user_id from user')]:
+            data = execute_query_with_cursor(
+                f'select * from search_session where session_id = {DBWorker.__get_session_for_user(user_id)}'
+            )[0]
+            return FilterParams(min_lvl=data[3], max_lvl=data[4], min_price=data[5], max_price=data[6])
+
     @staticmethod
     def get_visit_data_of_lot(lot_id: int) -> [LotVisitData]:
         return [DBWorker.__lot_visit_data_from_tuple(e)
@@ -176,21 +186,32 @@ class DBWorker:  # TODO: assertion error handling
             data = execute_query_with_cursor(f'select * from search_session '
                                              f'where session_id = {session_id}')[0]
             server, race = data[1], data[2]
-            return [
+            min_lvl, max_lvl = data[3], data[4]
+            min_price, max_price = data[5], data[6]
+            data = [
                 e for e in DBWorker.get_all_active_lots()
                 if e.char.server.name == server and e.char.race.name == race
             ]
+            lvl_filtered = [
+                e for e in data
+                if (min_lvl is None or min_lvl <= e.char.lvl) and (max_lvl is None or max_lvl >= e.char.lvl)
+            ]
+            price_filtered = [
+                e for e in lvl_filtered
+                if (min_price is None or min_price <= e.price) and (max_price is None or max_price >= e.price)
+            ]
+            return price_filtered
         except Exception as e:
             Logger.error(f'Failed to get filtered lots:\n\t\t\t{e}')
             return None
 
     @staticmethod
-    def update_search_session_params(user_id: int, param: SearchSessionParam, value) -> bool:
+    def update_search_session_params(user_id: int, param: SearchSessionParam, value_token: str) -> bool:
         try:
             session_id = DBWorker.__get_session_for_user(user_id)
             assert session_id is not None
             assert execute_query(
-                f'update search_session set {param.name} = \'{value.name}\' where session_id = {session_id}'
+                f'update search_session set {param.name} = {value_token} where session_id = {session_id}'
             )
             return True
         except AssertionError:
@@ -324,7 +345,7 @@ class DBWorker:  # TODO: assertion error handling
     @staticmethod
     def __new_ss(session_id: int) -> bool:
         return execute_query(
-            f'insert into search_session values ({session_id}, null, null)'
+            f'insert into search_session values ({session_id}, null, null, null, null, null, null)'
         )
 
     @staticmethod

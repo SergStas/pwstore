@@ -74,7 +74,11 @@ create table search_session
         primary key
         references session,
     server     text,
-    race       text
+    race       text,
+    min_lvl     int,
+    max_lvl     int,
+    min_price   int,
+    max_price   int
 );
 
 create table user_event

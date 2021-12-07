@@ -1,5 +1,6 @@
 import datetime
 
+from bot.feature.filter.FilterParams import FilterParams
 from data.DBWorker import DBWorker
 from entity.dataclass.CharData import CharData
 from entity.dataclass.LotData import LotData
@@ -14,6 +15,10 @@ from logger.Logger import Logger
 
 
 class DBController:
+    @staticmethod
+    def get_filter_params(user_id: int) -> FilterParams:
+        return DBWorker.get_filter_params(user_id)
+
     @staticmethod
     def get_visits_summary(user_id: int, date_from: datetime.date) -> [LotVisitSummary]:
         lots = DBWorker.get_user_lots(user_id)
@@ -92,8 +97,11 @@ class DBController:
 
     @staticmethod
     def update_search_session_params(user_id: int, param: SearchSessionParam, value) -> bool:
-        assert value is not None
-        return DBWorker.update_search_session_params(user_id, param, value)
+        if param in [SearchSessionParam.server, SearchSessionParam.race]:
+            token = f'\'{value.name}\''
+        else:
+            token = str(value)
+        return DBWorker.update_search_session_params(user_id, param, token)
 
     @staticmethod
     def wipe_sessions() -> bool:
