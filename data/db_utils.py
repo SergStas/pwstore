@@ -6,11 +6,18 @@ from logger.Logger import Logger
 __conn = sqlite3.connect('pwstore.db', check_same_thread=False)
 
 
-def init_db() -> None:
+def init_db(load_test_data: bool = True) -> None:
+    cursor = get_cursor()
     with open('data/db_gen.sql', 'r') as file:
-        cursor = get_cursor()
+        Logger.debug('Initializing tables...')
         cursor.executescript(file.read())
-        __conn.commit()
+        Logger.debug('Tables has been created')
+    if load_test_data:
+        with open('data/data_sample.sql') as file:
+            Logger.debug('Loading sample data...')
+            cursor.executescript(file.read())
+            Logger.debug('Sample data has been loaded')
+    __conn.commit()
     Logger.debug(f'DB has been inited')
 
 
