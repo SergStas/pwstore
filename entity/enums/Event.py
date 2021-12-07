@@ -32,3 +32,8 @@ class Event(Enum):
     close_lot_success = 27,
     select_date = 28,
     lots_visit_data = 29,
+    filter_menu = 30,
+    input_min_lvl = 31,
+    input_max_lvl = 32,
+    input_min_price = 33,
+    input_max_price = 34,

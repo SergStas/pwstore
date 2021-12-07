@@ -1,6 +1,7 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.feature.favs.FavsMarkup import FavsButtonArgs, FavsMarkup
+from bot.feature.filter.FilterKey import FilterKey
 from bot.spell.SpellHandler import SpellHandler
 from bot.utils.CallbackKeyEncoder import CallbackKeyEncoder
 from entity.dataclass.LotData import LotData
@@ -81,6 +82,10 @@ def get_search_results_kb(
         result.add(b_prev)
     elif len(lots) > (page + 1) * page_size:
         result.add(b_next)
+    result.add(InlineKeyboardButton(
+        text='Фильтрация...',
+        callback_data=CallbackKeyEncoder.enc_cb_data(FilterKey.filter.name, FilterKey.open.name),
+    ))
     result.add(get_return_button())
     return result
 

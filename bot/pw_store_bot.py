@@ -3,6 +3,8 @@ from telebot.types import Message, CallbackQuery
 
 from bot.feature.close_lot_handlers import close_lot_cb, close_conf_cb
 from bot.feature.favs.favs_cb import favs_cb
+from bot.feature.filter.FilterKey import FilterKey
+from bot.feature.filter.FilterCallback import FilterCallback
 from bot.feature.main_menu_handlers import show_buy_menu, main_menu_cb, show_sell_menu
 from bot.feature.new_lot_handlers import new_lot_race_cb, new_lot_server_cb
 from bot.feature.lotvisit.LotVisitCallback import LotVisitCallback
@@ -77,6 +79,7 @@ def callback_handler(call: CallbackQuery):
         'favs': favs_cb,
         'seller_lots': SellerLotsCallback.execute,
         'lot_visit': LotVisitCallback.execute,
+        FilterKey.filter.name: FilterCallback.execute,
     }
     key_dict[key](call, value, __bot)
     if f_key == 'void':

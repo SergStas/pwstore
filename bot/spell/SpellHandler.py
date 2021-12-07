@@ -58,7 +58,17 @@ class SpellHandler:
         Event.close_lot_success:
             'Лот персонажа закрыт успешно',
         Event.select_date:
-            'Укажите временной период:'
+            'Укажите временной период:',
+        Event.filter_menu:
+            'Укажите требуемые параметры фильтрации:',
+        Event.input_min_lvl:
+            'Укажите минимальный уровень:',
+        Event.input_max_lvl:
+            'Укажите максимальный уровень:',
+        Event.input_min_price:
+            'Укажите минимальную цену:',
+        Event.input_max_price:
+            'Укажите максимальную цену:',
     }
     __with_args = {
         Event.unknown_command:
